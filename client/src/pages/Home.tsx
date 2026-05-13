@@ -1001,136 +1001,228 @@ function PauseOverlay({ onResume, onMenu, isBoss }: { onResume: () => void; onMe
 
 // ─── World map screen ─────────────────────────────────────────────────────────
 
+// World metadata for saga map
+const WORLDS = [
+  { id: 1, name: 'Cozy Living Room', emoji: '🛋️', bg: `linear-gradient(180deg, #FFE6DB 0%, #FFF3E8 100%)`, pathColor: '#FFCFB3', accent: '#E8745A' },
+  { id: 2, name: 'Garden Afternoon', emoji: '🌸', bg: `linear-gradient(180deg, #D4ECC8 0%, #F0F8E8 100%)`, pathColor: '#A8C8A0', accent: '#5A9A5A' },
+  { id: 3, name: 'Midnight Rooftop', emoji: '🌙', bg: `linear-gradient(180deg, #1A1830 0%, #2A2848 100%)`, pathColor: '#4A4870', accent: '#A8A8E8' },
+  { id: 4, name: 'Dream Palace',     emoji: '✨', bg: `linear-gradient(180deg, #2A1840 0%, #1A1028 100%)`, pathColor: '#6A4888', accent: '#E8B8F8' },
+];
+
+// Zigzag x positions for saga path nodes (alternating left/right)
+const SAGA_X = [0.5, 0.75, 0.5, 0.25, 0.5]; // 5 levels per world
+
 function WorldMap({ onSelect, completedLevels, onBack }: {
   onSelect: (idx: number) => void;
   completedLevels: Record<number, number>;
   onBack: () => void;
 }) {
-  const totalCleared = Object.values(completedLevels).reduce((a, b) => a + b, 0);
+  const completedCount = Object.values(completedLevels).filter(s => s >= 1).length;
   const nextIdx = LEVELS.findIndex(l => !(completedLevels[l.id] >= 1));
-  const nextLevel = nextIdx >= 0 ? LEVELS[nextIdx] : null;
+
+  // Scroll to the next unlocked level on mount
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (nextIdx > 0 && scrollRef.current) {
+      const nodeHeight = 120;
+      const target = Math.max(0, nextIdx * nodeHeight - 200);
+      scrollRef.current.scrollTop = target;
+    }
+  }, [nextIdx]);
 
   return (
     <div style={{
-      minHeight: '100vh',
-      background: `linear-gradient(180deg, ${C.peach} 0%, ${C.cream} 100%)`,
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      overflowY: 'auto',
+      position: 'fixed', inset: 0,
+      display: 'flex', flexDirection: 'column',
+      background: '#1A1028',
     }}>
-      <div style={{ width: '100%', maxWidth: 420, padding: '0 0 40px' }}>
-        {/* Header */}
-        <div style={{
-          background: 'rgba(255,243,232,0.95)',
-          borderBottom: `1.5px solid ${C.peachMid}`,
-          padding: '14px 16px',
-          display: 'flex', flexDirection: 'column', gap: 6,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <motion.button whileTap={{ scale: 0.95 }} onClick={onBack} style={{
-              background: C.peach, border: `1.5px solid ${C.peachMid}`,
-              borderRadius: 12, padding: '4px 12px',
-              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12,
-              color: C.brownMid, cursor: 'pointer',
-            }}>← Back</motion.button>
-            <div style={{
-              fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 14,
-              color: C.brownMid, letterSpacing: 1,
-            }}>WORLD 1 · COZY LIVING ROOM</div>
-            <div style={{ width: 56 }} />
+      {/* Sticky header */}
+      <div style={{
+        background: 'rgba(255,243,232,0.97)',
+        borderBottom: `2px solid ${C.peachMid}`,
+        padding: '12px 16px',
+        display: 'flex', alignItems: 'center', gap: 12,
+        flexShrink: 0, zIndex: 10,
+      }}>
+        <motion.button whileTap={{ scale: 0.95 }} onClick={onBack} style={{
+          background: C.peach, border: `1.5px solid ${C.peachMid}`,
+          borderRadius: 12, padding: '5px 14px',
+          fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13,
+          color: C.brownMid, cursor: 'pointer', flexShrink: 0,
+        }}>← Back</motion.button>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 15, color: C.brown }}>CatSort Saga</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
+            <div style={{ flex: 1, height: 7, background: C.peach, borderRadius: 4, overflow: 'hidden' }}>
+              <motion.div
+                style={{ height: '100%', borderRadius: 4, background: `linear-gradient(90deg, ${C.accent}, ${C.pink})` }}
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min(100, (completedCount / LEVELS.length) * 100)}%` }}
+                transition={{ duration: 0.6, ease: 'easeOut' }}
+              />
+            </div>
+            <div style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12, color: C.brownMid, flexShrink: 0 }}>
+              {completedCount}/{LEVELS.length} ⭐
+            </div>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ flex: 1, height: 8, background: C.peach, borderRadius: 4, overflow: 'hidden' }}>
+        </div>
+      </div>
+
+      {/* Scrollable saga path */}
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
+        {WORLDS.map(world => {
+          const worldLevels = LEVELS.filter(l => l.world === world.id);
+          const isDark = world.id >= 3;
+          const textColor = isDark ? '#F0E8FF' : C.brown;
+          const subColor = isDark ? '#C0B8D8' : C.brownMid;
+
+          return (
+            <div key={world.id} style={{ background: world.bg, padding: '0 0 8px' }}>
+              {/* World banner */}
               <div style={{
-                height: '100%', borderRadius: 4,
-                background: `linear-gradient(90deg, ${C.accent}, ${C.pink})`,
-                width: `${Math.min(100, (Object.keys(completedLevels).length / LEVELS.length) * 100)}%`,
-                transition: 'width 0.5s ease',
-              }} />
-            </div>
-            <div style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 13, color: C.brown }}>
-              {Object.keys(completedLevels).length}/{LEVELS.length}
-            </div>
-          </div>
-        </div>
-
-        {/* Up next card */}
-        {nextLevel && (
-          <div style={{ margin: '16px 16px 0', padding: '12px 14px', background: 'rgba(255,255,255,0.7)', borderRadius: 18, border: `1.5px solid ${C.peachMid}` }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.accent, fontFamily: 'Nunito, sans-serif', letterSpacing: 0.8 }}>UP NEXT · LEVEL {nextLevel.id}</div>
-            <div style={{ fontFamily: 'Caveat, cursive', fontSize: 20, color: C.brown, marginTop: 2 }}>{nextLevel.name}</div>
-            <div style={{ fontSize: 11, color: C.brownMid, fontFamily: 'Nunito, sans-serif', marginTop: 2 }}>
-              merge×{nextLevel.mergeSizeK} · {nextLevel.budget.maxMoves} moves · {nextLevel.goalCoats.map(c => COAT_COLORS[c].label).join(' & ')} cats
-            </div>
-          </div>
-        )}
-
-        {/* Level grid */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: 12, padding: '16px',
-        }}>
-          {LEVELS.map((level, idx) => {
-            const stars = completedLevels[level.id] ?? 0;
-            const locked = idx > 0 && !(completedLevels[LEVELS[idx - 1].id] >= 1);
-            const isNext = !locked && stars === 0;
-
-            return (
-              <motion.button
-                key={level.id}
-                whileTap={{ scale: 0.94 }}
-                onClick={() => !locked && onSelect(idx)}
-                style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                  background: locked
-                    ? 'rgba(200,180,160,0.3)'
-                    : level.isBoss
-                    ? 'rgba(232,116,90,0.15)'
-                    : isNext
-                    ? 'rgba(255,255,255,0.9)'
-                    : 'rgba(255,243,232,0.8)',
-                  border: level.isBoss
-                    ? `2px solid ${C.accent}`
-                    : isNext
-                    ? `2px solid ${C.accent}`
-                    : `1.5px solid ${C.peachMid}`,
-                  borderRadius: 18,
-                  padding: '12px 8px',
-                  cursor: locked ? 'not-allowed' : 'pointer',
-                  opacity: locked ? 0.5 : 1,
-                  boxShadow: isNext ? `0 4px 16px rgba(232,116,90,0.2)` : 'none',
-                }}
-              >
-                {/* Cat icon or lock */}
-                {locked ? (
-                  <div style={{ fontSize: 24 }}>🔒</div>
-                ) : level.isBoss ? (
-                  <div style={{ fontSize: 24 }}>⚡</div>
-                ) : (
-                  <CatImg coat={level.goalCoats[0]} size={36} />
-                )}
-
-                {/* Level number */}
-                <div style={{
-                  fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 16,
-                  color: locked ? C.brownLight : C.brown,
-                }}>{level.id}</div>
-
-                {/* Stars */}
-                <div style={{ display: 'flex', gap: 1, fontSize: 12 }}>
-                  {[1, 2, 3].map(s => (
-                    <span key={s} style={{ opacity: stars >= s ? 1 : 0.2 }}>⭐</span>
-                  ))}
+                padding: '20px 20px 8px',
+                display: 'flex', alignItems: 'center', gap: 10,
+              }}>
+                <div style={{ fontSize: 28 }}>{world.emoji}</div>
+                <div>
+                  <div style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 11, letterSpacing: 2, color: world.accent, textTransform: 'uppercase' }}>World {world.id}</div>
+                  <div style={{ fontFamily: 'Caveat, cursive', fontSize: 22, color: textColor, lineHeight: 1.1 }}>{world.name}</div>
                 </div>
+              </div>
 
-                {/* Level name */}
-                <div style={{
-                  fontSize: 9, fontFamily: 'Caveat, cursive', color: C.brownMid,
-                  textAlign: 'center', lineHeight: 1.2,
-                }}>{level.name}</div>
-              </motion.button>
-            );
-          })}
-        </div>
+              {/* Level nodes in zigzag */}
+              <div style={{ position: 'relative', padding: '0 0 16px' }}>
+                {worldLevels.map((level, i) => {
+                  const idx = LEVELS.indexOf(level);
+                  const stars = completedLevels[level.id] ?? 0;
+                  const locked = idx > 0 && !(completedLevels[LEVELS[idx - 1].id] >= 1);
+                  const isNext = !locked && stars === 0;
+                  const xFrac = SAGA_X[i];
+
+                  // Node style variants
+                  const nodeBg = locked
+                    ? (isDark ? 'rgba(60,50,80,0.6)' : 'rgba(200,180,160,0.35)')
+                    : level.isBoss
+                    ? (isDark ? 'rgba(168,168,232,0.2)' : 'rgba(232,116,90,0.18)')
+                    : stars > 0
+                    ? (isDark ? 'rgba(100,80,140,0.5)' : 'rgba(255,243,232,0.9)')
+                    : 'rgba(255,255,255,0.92)';
+                  const nodeBorder = locked
+                    ? (isDark ? '1.5px solid rgba(100,90,130,0.4)' : `1.5px solid ${C.peachMid}`)
+                    : level.isBoss
+                    ? `2.5px solid ${world.accent}`
+                    : isNext
+                    ? `2px solid ${world.accent}`
+                    : `1.5px solid ${isDark ? 'rgba(140,120,180,0.5)' : C.peachMid}`;
+
+                  return (
+                    <div key={level.id} style={{
+                      display: 'flex',
+                      justifyContent: xFrac < 0.5 ? 'flex-start' : xFrac > 0.5 ? 'flex-end' : 'center',
+                      padding: `8px ${xFrac === 0.5 ? '0' : '20px'}`,
+                      position: 'relative',
+                    }}>
+                      {/* Connecting line to next node */}
+                      {i < worldLevels.length - 1 && (
+                        <div style={{
+                          position: 'absolute',
+                          left: '50%', top: '100%',
+                          width: 3, height: 32,
+                          background: world.pathColor,
+                          opacity: 0.5,
+                          borderRadius: 2,
+                          transform: 'translateX(-50%)',
+                          zIndex: 0,
+                        }} />
+                      )}
+
+                      <motion.button
+                        whileTap={locked ? {} : { scale: 0.93 }}
+                        whileHover={locked ? {} : { scale: 1.04 }}
+                        onClick={() => !locked && onSelect(idx)}
+                        style={{
+                          position: 'relative', zIndex: 1,
+                          display: 'flex', alignItems: 'center', gap: 10,
+                          background: nodeBg,
+                          border: nodeBorder,
+                          borderRadius: level.isBoss ? 20 : 16,
+                          padding: level.isBoss ? '10px 18px' : '8px 14px',
+                          cursor: locked ? 'not-allowed' : 'pointer',
+                          opacity: locked ? 0.55 : 1,
+                          boxShadow: isNext
+                            ? `0 4px 20px ${world.accent}44`
+                            : level.isBoss && !locked
+                            ? `0 4px 16px ${world.accent}33`
+                            : 'none',
+                          minWidth: 200, maxWidth: 280,
+                          transition: 'box-shadow 0.2s',
+                        }}
+                      >
+                        {/* Icon */}
+                        <div style={{ flexShrink: 0, position: 'relative' }}>
+                          {locked ? (
+                            <div style={{ fontSize: 28, lineHeight: 1 }}>🔒</div>
+                          ) : level.isBoss ? (
+                            <div style={{ fontSize: 28, lineHeight: 1 }}>⚡</div>
+                          ) : (
+                            <CatImg coat={level.goalCoats[0]} size={40} />
+                          )}
+                          {/* Pulsing ring for next level */}
+                          {isNext && (
+                            <motion.div
+                              animate={{ scale: [1, 1.4, 1], opacity: [0.7, 0, 0.7] }}
+                              transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+                              style={{
+                                position: 'absolute', inset: -6,
+                                borderRadius: '50%',
+                                border: `2px solid ${world.accent}`,
+                                pointerEvents: 'none',
+                              }}
+                            />
+                          )}
+                        </div>
+
+                        {/* Text info */}
+                        <div style={{ flex: 1, textAlign: 'left' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{
+                              fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 11,
+                              color: world.accent, letterSpacing: 0.5,
+                            }}>LVL {level.id}</div>
+                            {level.isBoss && (
+                              <div style={{
+                                fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 9,
+                                background: world.accent, color: '#fff',
+                                borderRadius: 6, padding: '1px 5px', letterSpacing: 0.5,
+                              }}>BOSS</div>
+                            )}
+                          </div>
+                          <div style={{
+                            fontFamily: 'Caveat, cursive', fontSize: 17,
+                            color: locked ? subColor : textColor, lineHeight: 1.1,
+                          }}>{level.name}</div>
+                          {!locked && (
+                            <div style={{ fontSize: 10, color: subColor, fontFamily: 'Nunito, sans-serif', marginTop: 1 }}>
+                              {level.goalCoats.map(c => COAT_COLORS[c].label).join(' · ')} · {level.budget.maxMoves}m
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Stars */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, flexShrink: 0 }}>
+                          {[1, 2, 3].map(s => (
+                            <span key={s} style={{ fontSize: 11, opacity: stars >= s ? 1 : 0.2, lineHeight: 1 }}>⭐</span>
+                          ))}
+                        </div>
+                      </motion.button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+        <div style={{ height: 40 }} />
       </div>
     </div>
   );

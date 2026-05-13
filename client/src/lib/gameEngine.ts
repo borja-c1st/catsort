@@ -474,97 +474,366 @@ export function placeChunk(state: GameState, targetId: string): MoveResult {
 }
 
 // ─── Level definitions ────────────────────────────────────────────────────────
+//
+// Difficulty tiers (every 3 levels step up):
+//   Tier 1 — L1-3  : merge-2, grab≤2, 3-4 towers, 1 goal coat
+//   Tier 2 — L4-6  : merge-3, grab≤3, 4 towers, 1-2 goal coats
+//   Tier 3 — L7-9  : merge-3, grab≤3, 4-5 towers, 2 goal coats, tighter budget
+//   Tier 4 — L10-12: merge-3, grab≤3, 5 towers, 2 goal coats, locked/frozen
+//   Tier 5 — L13-15: merge-3, grab≤3, 5-6 towers, 2-3 goal coats, very tight
+//   Tier 6 — L16-18: merge-3, grab≤2, 5-6 towers, 3 goal coats, brutal budget
+//   Tier 7 — L19-20: merge-3, grab≤2, 6 towers, 3-6 goal coats, boss finales
+//
+// World map:
+//   World 1 "Cozy Living Room"  — L1-5
+//   World 2 "Garden Afternoon"  — L6-10
+//   World 3 "Midnight Rooftop"  — L11-15
+//   World 4 "Dream Palace"      — L16-20
 
 export const LEVELS: LevelConfig[] = [
-  // ── LEVEL 1 ─ grab ≤2, merge 2, 3 towers ──────────────────────────────────
+
+  // ════════════════════════════════════════════════════════════════════════
+  // WORLD 1 — Cozy Living Room  (L1-5)
+  // ════════════════════════════════════════════════════════════════════════
+
+  // L1 — Tier 1: merge-2, grab≤2, 3 towers, goal: ginger
   {
     id: 1, name: 'Sunny Windowsill', world: 1, levelInWorld: 1, isBoss: false,
     description: 'Send the ginger kittens home',
-    goalCoats: ['ginger'],
-    mergeSizeK: 2,
+    goalCoats: ['ginger'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 20 },
-    starThresholds: { two: 0.3, three: 0.6 },
-    triggers: [],
+    starThresholds: { two: 0.35, three: 0.65 }, triggers: [],
     containers: [
-      // 3 towers: 2 filled + 1 empty buffer
       { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'ginger'] },
       { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['ginger', 'tabby', 'ginger', 'white'] },
       { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: [] },
     ],
   },
-  // ── LEVEL 2 ─ grab ≤2, merge 2, 4 towers ──────────────────────────────────
+
+  // L2 — Tier 1: merge-2, grab≤2, 4 towers, goal: tabby+white
   {
     id: 2, name: 'Bookshelf Nap', world: 1, levelInWorld: 2, isBoss: false,
-    description: 'Send the tabby and white cats to their beds',
-    goalCoats: ['tabby', 'white'],
-    mergeSizeK: 2,
+    description: 'Sort the tabby and white cats',
+    goalCoats: ['tabby', 'white'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 24 },
-    starThresholds: { two: 0.3, three: 0.55 },
-    triggers: [],
+    starThresholds: { two: 0.3, three: 0.6 }, triggers: [],
     containers: [
-      // 4 towers: 3 filled + 1 empty buffer
-      // 4 tabby + 2 white total — all clearable with merge-2
       { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'tabby', 'white', 'tabby'] },
       { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['tabby', 'ginger', 'tabby', 'white'] },
       { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: ['ginger', 'ginger'] },
       { id: 'c4', grabNumber: 2, capacity: 10, position: { x: 3, y: 0 }, startStack: [] },
     ],
   },
-  // ── LEVEL 3 ─ grab ≤3, merge 3, 3 towers ──────────────────────────────────
+
+  // L3 — Tier 1→2 bridge: merge-3, grab≤3, 3 towers, goal: calico
   {
     id: 3, name: 'Calico Corner', world: 1, levelInWorld: 3, isBoss: false,
     description: 'Collect all the calico cats',
-    goalCoats: ['calico'],
-    mergeSizeK: 3,
+    goalCoats: ['calico'], mergeSizeK: 3,
     budget: { type: 'moves', maxMoves: 22 },
-    starThresholds: { two: 0.3, three: 0.55 },
-    triggers: [],
+    starThresholds: { two: 0.3, three: 0.55 }, triggers: [],
     containers: [
-      // 3 towers: 2 filled + 1 empty
       { id: 'c1', grabNumber: 3, capacity: 10, position: { x: 0, y: 0 }, startStack: ['siamese', 'calico', 'black', 'calico', 'siamese'] },
       { id: 'c2', grabNumber: 3, capacity: 10, position: { x: 1, y: 0 }, startStack: ['calico', 'black', 'calico', 'siamese', 'calico'] },
       { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: [] },
     ],
   },
-  // ── LEVEL 4 ─ grab ≤3, merge 3, 4 towers ──────────────────────────────────
+
+  // L4 — Tier 2: merge-3, grab≤3, 4 towers, goal: siamese
   {
     id: 4, name: 'Surprise Guests', world: 1, levelInWorld: 4, isBoss: false,
     description: 'Send the siamese cats to rest',
-    goalCoats: ['siamese'],
-    mergeSizeK: 3,
+    goalCoats: ['siamese'], mergeSizeK: 3,
     budget: { type: 'moves', maxMoves: 26 },
-    starThresholds: { two: 0.25, three: 0.5 },
-    triggers: [],
+    starThresholds: { two: 0.25, three: 0.5 }, triggers: [],
     containers: [
-      // 4 towers: 3 filled + 1 empty
       { id: 'c1', grabNumber: 3, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'siamese', 'tabby', 'black', 'siamese'] },
       { id: 'c2', grabNumber: 3, capacity: 10, position: { x: 1, y: 0 }, startStack: ['siamese', 'calico', 'black', 'siamese', 'tabby'] },
       { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: ['tabby', 'siamese', 'calico', 'ginger'] },
       { id: 'c4', grabNumber: 3, capacity: 10, position: { x: 3, y: 0 }, startStack: [] },
     ],
   },
-  // ── LEVEL 5 ─ grab ≤3, merge 3, 5 towers (boss) ───────────────────────────
+
+  // L5 — Tier 2 boss: merge-3, grab≤3, 5 towers, goal: ginger+white
   {
     id: 5, name: 'Moonlit Window', world: 1, levelInWorld: 5, isBoss: true,
     description: 'Clear two coats before dawn',
-    goalCoats: ['ginger', 'white'],
-    mergeSizeK: 3,
+    goalCoats: ['ginger', 'white'], mergeSizeK: 3,
     budget: { type: 'moves', maxMoves: 30 },
     starThresholds: { two: 0.2, three: 0.45 },
-    triggers: [
-      {
-        event: 'onVanishComplete',
-        condition: { vanishesCompleted: 2 },
-        action: { type: 'grantBudget', moves: 3 },
-      },
-    ],
+    triggers: [{ event: 'onVanishComplete', condition: { vanishesCompleted: 2 }, action: { type: 'grantBudget', moves: 3 } }],
     containers: [
-      // 5 towers: 4 filled + 1 empty
       { id: 'c1', grabNumber: 3, capacity: 10, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'ginger', 'white', 'black'] },
       { id: 'c2', grabNumber: 3, capacity: 10, position: { x: 1, y: 0 }, startStack: ['ginger', 'white', 'calico', 'ginger', 'tabby'] },
       { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: ['tabby', 'white', 'ginger', 'black', 'calico'] },
       { id: 'c4', grabNumber: 3, capacity: 10, position: { x: 3, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'black'] },
       { id: 'c5', grabNumber: 3, capacity: 10, position: { x: 4, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // ════════════════════════════════════════════════════════════════════════
+  // WORLD 2 — Garden Afternoon  (L6-10)
+  // ════════════════════════════════════════════════════════════════════════
+
+  // L6 — Tier 3: merge-3, grab≤3, 4 towers, goal: black+tabby
+  {
+    id: 6, name: 'Garden Fence', world: 2, levelInWorld: 1, isBoss: false,
+    description: 'Shoo the black and tabby cats off the fence',
+    goalCoats: ['black', 'tabby'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 26 },
+    starThresholds: { two: 0.25, three: 0.5 }, triggers: [],
+    containers: [
+      { id: 'c1', grabNumber: 3, capacity: 10, position: { x: 0, y: 0 }, startStack: ['white', 'black', 'tabby', 'calico', 'black'] },
+      { id: 'c2', grabNumber: 3, capacity: 10, position: { x: 1, y: 0 }, startStack: ['tabby', 'ginger', 'black', 'tabby', 'ginger'] },
+      { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: ['black', 'calico', 'tabby', 'white', 'tabby'] },
+      { id: 'c4', grabNumber: 3, capacity: 10, position: { x: 3, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // L7 — Tier 3: merge-3, grab≤3, 5 towers, goal: calico+siamese
+  {
+    id: 7, name: 'Flower Bed Snooze', world: 2, levelInWorld: 2, isBoss: false,
+    description: 'Wake the calico and siamese from the flower beds',
+    goalCoats: ['calico', 'siamese'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 28 },
+    starThresholds: { two: 0.25, three: 0.5 }, triggers: [],
+    containers: [
+      { id: 'c1', grabNumber: 3, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'calico', 'black', 'siamese', 'calico'] },
+      { id: 'c2', grabNumber: 3, capacity: 10, position: { x: 1, y: 0 }, startStack: ['siamese', 'tabby', 'calico', 'black', 'siamese'] },
+      { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: ['calico', 'ginger', 'siamese', 'tabby', 'calico'] },
+      { id: 'c4', grabNumber: 3, capacity: 10, position: { x: 3, y: 0 }, startStack: ['black', 'siamese', 'ginger'] },
+      { id: 'c5', grabNumber: 3, capacity: 10, position: { x: 4, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // L8 — Tier 3→4 bridge: merge-3, grab≤3, 5 towers, goal: ginger+black, tighter
+  {
+    id: 8, name: 'Butterfly Chase', world: 2, levelInWorld: 3, isBoss: false,
+    description: 'Catch the ginger and black cats before they escape',
+    goalCoats: ['ginger', 'black'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 24 },
+    starThresholds: { two: 0.2, three: 0.45 }, triggers: [],
+    containers: [
+      { id: 'c1', grabNumber: 3, capacity: 10, position: { x: 0, y: 0 }, startStack: ['tabby', 'ginger', 'white', 'black', 'ginger'] },
+      { id: 'c2', grabNumber: 3, capacity: 10, position: { x: 1, y: 0 }, startStack: ['black', 'calico', 'ginger', 'tabby', 'black'] },
+      { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: ['ginger', 'siamese', 'black', 'white', 'ginger'] },
+      { id: 'c4', grabNumber: 3, capacity: 10, position: { x: 3, y: 0 }, startStack: ['black', 'tabby', 'calico'] },
+      { id: 'c5', grabNumber: 3, capacity: 10, position: { x: 4, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // L9 — Tier 4: merge-3, grab≤3, 5 towers, goal: white+siamese, frozen tower
+  {
+    id: 9, name: 'Frozen Fountain', world: 2, levelInWorld: 4, isBoss: false,
+    description: 'Thaw the fountain and free the white and siamese cats',
+    goalCoats: ['white', 'siamese'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 26 },
+    starThresholds: { two: 0.2, three: 0.45 }, triggers: [],
+    containers: [
+      { id: 'c1', grabNumber: 3, capacity: 10, position: { x: 0, y: 0 }, startStack: ['white', 'tabby', 'siamese', 'ginger', 'white'] },
+      { id: 'c2', grabNumber: 3, capacity: 10, position: { x: 1, y: 0 }, startStack: ['siamese', 'black', 'white', 'calico', 'siamese'], frozen: true },
+      { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: ['ginger', 'white', 'tabby', 'siamese', 'black'] },
+      { id: 'c4', grabNumber: 3, capacity: 10, position: { x: 3, y: 0 }, startStack: ['calico', 'siamese', 'ginger'] },
+      { id: 'c5', grabNumber: 3, capacity: 10, position: { x: 4, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // L10 — Tier 4 boss: merge-3, grab≤3, 6 towers, goal: tabby+calico+ginger
+  {
+    id: 10, name: 'Garden Party Boss', world: 2, levelInWorld: 5, isBoss: true,
+    description: 'Clear three coats from the garden party',
+    goalCoats: ['tabby', 'calico', 'ginger'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 34 },
+    starThresholds: { two: 0.18, three: 0.4 },
+    triggers: [{ event: 'onVanishComplete', condition: { vanishesCompleted: 3 }, action: { type: 'grantBudget', moves: 4 } }],
+    containers: [
+      { id: 'c1', grabNumber: 3, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'tabby', 'calico', 'black', 'ginger', 'tabby'] },
+      { id: 'c2', grabNumber: 3, capacity: 10, position: { x: 1, y: 0 }, startStack: ['calico', 'siamese', 'ginger', 'tabby', 'calico'] },
+      { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: ['tabby', 'white', 'calico', 'ginger', 'black'] },
+      { id: 'c4', grabNumber: 3, capacity: 10, position: { x: 3, y: 0 }, startStack: ['ginger', 'calico', 'tabby', 'siamese', 'ginger'] },
+      { id: 'c5', grabNumber: 3, capacity: 10, position: { x: 4, y: 0 }, startStack: ['black', 'tabby', 'white'] },
+      { id: 'c6', grabNumber: 3, capacity: 10, position: { x: 5, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // ════════════════════════════════════════════════════════════════════════
+  // WORLD 3 — Midnight Rooftop  (L11-15)
+  // ════════════════════════════════════════════════════════════════════════
+
+  // L11 — Tier 5: merge-3, grab≤2, 5 towers, goal: black+siamese
+  {
+    id: 11, name: 'Rooftop Shadows', world: 3, levelInWorld: 1, isBoss: false,
+    description: 'Clear the shadows from the midnight rooftop',
+    goalCoats: ['black', 'siamese'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 24 },
+    starThresholds: { two: 0.2, three: 0.42 }, triggers: [],
+    containers: [
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['white', 'black', 'siamese', 'tabby', 'black', 'siamese'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['siamese', 'ginger', 'black', 'calico', 'siamese'] },
+      { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: ['black', 'tabby', 'siamese', 'white', 'black'] },
+      { id: 'c4', grabNumber: 2, capacity: 10, position: { x: 3, y: 0 }, startStack: ['ginger', 'siamese', 'calico'] },
+      { id: 'c5', grabNumber: 2, capacity: 10, position: { x: 4, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // L12 — Tier 5: merge-3, grab≤2, 5 towers, goal: white+ginger, coat-locked
+  {
+    id: 12, name: 'Chimney Perch', world: 3, levelInWorld: 2, isBoss: false,
+    description: 'Sort the white cats to their locked tower',
+    goalCoats: ['white', 'ginger'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 26 },
+    starThresholds: { two: 0.2, three: 0.42 }, triggers: [],
+    containers: [
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['tabby', 'white', 'ginger', 'black', 'white'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['ginger', 'calico', 'white', 'siamese', 'ginger'] },
+      { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: ['white', 'black', 'ginger', 'tabby', 'white'], coatLocked: 'white' },
+      { id: 'c4', grabNumber: 2, capacity: 10, position: { x: 3, y: 0 }, startStack: ['siamese', 'ginger', 'calico'] },
+      { id: 'c5', grabNumber: 2, capacity: 10, position: { x: 4, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // L13 — Tier 5→6 bridge: merge-3, grab≤2, 6 towers, goal: calico+tabby, tight
+  {
+    id: 13, name: 'Neon Alley', world: 3, levelInWorld: 3, isBoss: false,
+    description: 'Sort the alley cats before the rain comes',
+    goalCoats: ['calico', 'tabby'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 22 },
+    starThresholds: { two: 0.18, three: 0.38 }, triggers: [],
+    containers: [
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['siamese', 'calico', 'tabby', 'black', 'calico', 'tabby'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['tabby', 'white', 'calico', 'ginger', 'tabby'] },
+      { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: ['calico', 'black', 'tabby', 'siamese', 'calico'] },
+      { id: 'c4', grabNumber: 2, capacity: 10, position: { x: 3, y: 0 }, startStack: ['tabby', 'ginger', 'calico', 'white'] },
+      { id: 'c5', grabNumber: 2, capacity: 10, position: { x: 4, y: 0 }, startStack: ['black', 'calico'] },
+      { id: 'c6', grabNumber: 2, capacity: 10, position: { x: 5, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // L14 — Tier 6: merge-3, grab≤2, 6 towers, goal: ginger+white+black
+  {
+    id: 14, name: 'Water Tower', world: 3, levelInWorld: 4, isBoss: false,
+    description: 'Three coats, six towers, one chance',
+    goalCoats: ['ginger', 'white', 'black'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 28 },
+    starThresholds: { two: 0.18, three: 0.38 }, triggers: [],
+    containers: [
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['tabby', 'ginger', 'white', 'black', 'ginger', 'calico'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['black', 'siamese', 'ginger', 'white', 'black'] },
+      { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: ['white', 'calico', 'black', 'tabby', 'white'] },
+      { id: 'c4', grabNumber: 2, capacity: 10, position: { x: 3, y: 0 }, startStack: ['ginger', 'black', 'white', 'siamese', 'ginger'] },
+      { id: 'c5', grabNumber: 2, capacity: 10, position: { x: 4, y: 0 }, startStack: ['black', 'tabby', 'ginger'] },
+      { id: 'c6', grabNumber: 2, capacity: 10, position: { x: 5, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // L15 — Tier 6 boss: merge-3, grab≤2, 6 towers, goal: siamese+calico+tabby
+  {
+    id: 15, name: 'Midnight Boss', world: 3, levelInWorld: 5, isBoss: true,
+    description: 'The rooftop king demands order',
+    goalCoats: ['siamese', 'calico', 'tabby'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 32 },
+    starThresholds: { two: 0.15, three: 0.35 },
+    triggers: [{ event: 'onVanishComplete', condition: { vanishesCompleted: 3 }, action: { type: 'grantBudget', moves: 4 } }],
+    containers: [
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['siamese', 'calico', 'tabby', 'black', 'siamese', 'calico'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['tabby', 'white', 'siamese', 'calico', 'tabby', 'ginger'] },
+      { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: ['calico', 'black', 'tabby', 'siamese', 'calico'] },
+      { id: 'c4', grabNumber: 2, capacity: 10, position: { x: 3, y: 0 }, startStack: ['siamese', 'ginger', 'calico', 'tabby', 'siamese'] },
+      { id: 'c5', grabNumber: 2, capacity: 10, position: { x: 4, y: 0 }, startStack: ['tabby', 'calico', 'black', 'siamese'] },
+      { id: 'c6', grabNumber: 2, capacity: 10, position: { x: 5, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // ════════════════════════════════════════════════════════════════════════
+  // WORLD 4 — Dream Palace  (L16-20)
+  // ════════════════════════════════════════════════════════════════════════
+
+  // L16 — Tier 7: merge-3, grab≤2, 6 towers, goal: ginger+siamese+black
+  {
+    id: 16, name: 'Crystal Corridor', world: 4, levelInWorld: 1, isBoss: false,
+    description: 'The palace cats are scattered through the corridors',
+    goalCoats: ['ginger', 'siamese', 'black'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 26 },
+    starThresholds: { two: 0.15, three: 0.32 }, triggers: [],
+    containers: [
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'siamese', 'black', 'ginger', 'calico'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['black', 'tabby', 'ginger', 'siamese', 'black'] },
+      { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: ['siamese', 'calico', 'black', 'ginger', 'siamese'] },
+      { id: 'c4', grabNumber: 2, capacity: 10, position: { x: 3, y: 0 }, startStack: ['ginger', 'black', 'tabby', 'siamese', 'ginger'] },
+      { id: 'c5', grabNumber: 2, capacity: 10, position: { x: 4, y: 0 }, startStack: ['black', 'siamese', 'white', 'calico'] },
+      { id: 'c6', grabNumber: 2, capacity: 10, position: { x: 5, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // L17 — Tier 7: merge-3, grab≤2, 6 towers, goal: white+tabby+calico
+  {
+    id: 17, name: 'Throne Room', world: 4, levelInWorld: 2, isBoss: false,
+    description: 'Only the worthy cats may sit on the throne',
+    goalCoats: ['white', 'tabby', 'calico'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 28 },
+    starThresholds: { two: 0.15, three: 0.32 }, triggers: [],
+    containers: [
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'white', 'tabby', 'calico', 'white', 'black'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['calico', 'siamese', 'white', 'tabby', 'calico'] },
+      { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: ['tabby', 'black', 'calico', 'white', 'tabby'] },
+      { id: 'c4', grabNumber: 2, capacity: 10, position: { x: 3, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'siamese', 'white'] },
+      { id: 'c5', grabNumber: 2, capacity: 10, position: { x: 4, y: 0 }, startStack: ['calico', 'tabby', 'black', 'white'] },
+      { id: 'c6', grabNumber: 2, capacity: 10, position: { x: 5, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // L18 — Tier 7: merge-3, grab≤2, 6 towers, goal: all 6 coats, brutal
+  {
+    id: 18, name: 'Hall of Mirrors', world: 4, levelInWorld: 3, isBoss: false,
+    description: 'Every cat must find its reflection',
+    goalCoats: ['ginger', 'white', 'black', 'tabby', 'calico', 'siamese'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 36 },
+    starThresholds: { two: 0.12, three: 0.28 }, triggers: [],
+    containers: [
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'white', 'black', 'tabby', 'calico', 'siamese'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['siamese', 'ginger', 'calico', 'black', 'white'] },
+      { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: ['tabby', 'calico', 'ginger', 'siamese', 'black'] },
+      { id: 'c4', grabNumber: 2, capacity: 10, position: { x: 3, y: 0 }, startStack: ['white', 'tabby', 'siamese', 'ginger', 'calico'] },
+      { id: 'c5', grabNumber: 2, capacity: 10, position: { x: 4, y: 0 }, startStack: ['black', 'siamese', 'tabby', 'white'] },
+      { id: 'c6', grabNumber: 2, capacity: 10, position: { x: 5, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // L19 — Tier 7 penultimate: merge-3, grab≤2, 6 towers, goal: 4 coats
+  {
+    id: 19, name: 'Dream Staircase', world: 4, levelInWorld: 4, isBoss: false,
+    description: 'Ascend the dream staircase with four coats cleared',
+    goalCoats: ['ginger', 'black', 'calico', 'siamese'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 30 },
+    starThresholds: { two: 0.12, three: 0.28 }, triggers: [],
+    containers: [
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'black', 'calico', 'siamese', 'tabby'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['siamese', 'calico', 'ginger', 'black', 'siamese'] },
+      { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: ['black', 'tabby', 'siamese', 'ginger', 'calico'] },
+      { id: 'c4', grabNumber: 2, capacity: 10, position: { x: 3, y: 0 }, startStack: ['calico', 'ginger', 'black', 'white', 'ginger'] },
+      { id: 'c5', grabNumber: 2, capacity: 10, position: { x: 4, y: 0 }, startStack: ['siamese', 'black', 'calico', 'tabby'] },
+      { id: 'c6', grabNumber: 2, capacity: 10, position: { x: 5, y: 0 }, startStack: [] },
+    ],
+  },
+
+  // L20 — FINAL BOSS: merge-3, grab≤2, 6 towers, goal: all 6 coats
+  {
+    id: 20, name: 'The Dream Palace', world: 4, levelInWorld: 5, isBoss: true,
+    description: 'The ultimate challenge — clear every coat from the palace',
+    goalCoats: ['ginger', 'white', 'black', 'tabby', 'calico', 'siamese'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 40 },
+    starThresholds: { two: 0.1, three: 0.25 },
+    triggers: [
+      { event: 'onVanishComplete', condition: { vanishesCompleted: 3 }, action: { type: 'grantBudget', moves: 3 } },
+      { event: 'onVanishComplete', condition: { vanishesCompleted: 6 }, action: { type: 'grantBudget', moves: 3 } },
+    ],
+    containers: [
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'white', 'black', 'tabby', 'calico', 'siamese'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['siamese', 'ginger', 'calico', 'black', 'white', 'tabby'] },
+      { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: ['tabby', 'calico', 'ginger', 'siamese', 'black', 'white'] },
+      { id: 'c4', grabNumber: 2, capacity: 10, position: { x: 3, y: 0 }, startStack: ['white', 'black', 'siamese', 'ginger', 'calico', 'tabby'] },
+      { id: 'c5', grabNumber: 2, capacity: 10, position: { x: 4, y: 0 }, startStack: ['black', 'tabby', 'white', 'calico', 'siamese'] },
+      { id: 'c6', grabNumber: 2, capacity: 10, position: { x: 5, y: 0 }, startStack: [] },
     ],
   },
 ];
