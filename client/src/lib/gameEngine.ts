@@ -304,7 +304,9 @@ export function grabChunk(state: GameState, sourceId: string): GameState {
   if (source.stack.length < 1) {
     return { ...state, message: 'No cats to grab!' };
   }
-  const grabbed = source.stack.splice(source.stack.length - 1, 1).reverse();
+  // Grab up to grabNumber cats, but never more than what's available
+  const count = Math.min(source.grabNumber, source.stack.length);
+  const grabbed = source.stack.splice(source.stack.length - count, count).reverse();
   return { ...state, containers, selectedContainerId: sourceId, chunk: { items: grabbed, sourceContainerId: sourceId }, message: null };
 }
 
