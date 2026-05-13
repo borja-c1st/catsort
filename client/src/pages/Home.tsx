@@ -89,6 +89,49 @@ function getBedImg(containerIndex: number): string {
   return BED_IMGS[containerIndex % BED_IMGS.length];
 }
 
+// ─── Cat idle animation ─────────────────────────────────────────────────────
+
+/**
+ * Wraps a single cat in a continuous idle wobble:
+ *   scale: 1 + 0.05 * cos(t * freq + phase)  → oscillates 0.95 – 1.0
+ *   rotate: sin(t * freq * 0.7 + phase) deg  → oscillates -1 – +1
+ * Each cat gets a unique phase so they don’t all move in lockstep.
+ */
+function CatIdleWrapper({ children, phase, disabled }: {
+  children: React.ReactNode;
+  phase: number;
+  disabled?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const rafRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (disabled) {
+      if (ref.current) ref.current.style.transform = '';
+      return;
+    }
+    const FREQ = 1.4; // radians per second
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = (now - start) / 1000;
+      const scale = 1 - 0.05 * (1 - Math.cos(t * FREQ + phase)) / 2; // 0.95 – 1.0
+      const rot = Math.sin(t * FREQ * 0.7 + phase); // -1 – +1 deg
+      if (ref.current) {
+        ref.current.style.transform = `scale(${scale.toFixed(4)}) rotate(${rot.toFixed(3)}deg)`;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [disabled, phase]);
+
+  return (
+    <div ref={ref} style={{ display: 'flex', justifyContent: 'center', willChange: 'transform' }}>
+      {children}
+    </div>
+  );
+}
+
 // ─── Tower / Container ────────────────────────────────────────────────────────
 
 function TowerContainer({
@@ -209,7 +252,9 @@ function TowerContainer({
                     position: 'relative',
                   }}
                 >
-                  <CatImg coat={item.coat} size={CAT_SIZE} />
+                  <CatIdleWrapper phase={idx * 1.3 + containerIndex * 0.7} disabled={isVanishing}>
+                    <CatImg coat={item.coat} size={CAT_SIZE} />
+                  </CatIdleWrapper>
                 </motion.div>
               );
             })}
