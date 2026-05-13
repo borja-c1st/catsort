@@ -156,24 +156,7 @@ function TowerContainer({
           paddingBottom: 4,
         }}
       >
-        {/* Selection glow ring — subtle outline around the shaft area */}
-        {(isSelected || canPlace) && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              borderRadius: 16,
-              boxShadow: isSelected
-                ? `0 0 0 2.5px ${C.accent}, 0 0 20px rgba(232,116,90,0.25)`
-                : `0 0 0 2px ${C.peachMid}`,
-              pointerEvents: 'none',
-              zIndex: 1,
-            }}
-          />
-        )}
+
 
         {/* Cat stack — grows upward from bottom of shaft */}
         <div style={{
@@ -193,18 +176,18 @@ function TowerContainer({
                   key={item.id}
                   initial={{ scale: 0.5, opacity: 0, y: 20 }}
                   animate={isVanishing
-                    ? { scale: [1, 1.22, 0.88, 1.15, 1.05, 0], opacity: [1, 1, 1, 1, 1, 0], rotate: [0, -10, 10, -8, 6, 0], y: [0, -8, 2, -6, 2, -24] }
+                    ? { scale: [1, 1.3, 0], opacity: [1, 1, 0], y: [0, -10, -10] }
                     : { scale: 1, opacity: 1, y: 0 }
                   }
                   exit={{ scale: 0.3, opacity: 0, y: -16 }}
                   transition={isVanishing
-                    ? { duration: 0.65, ease: 'easeInOut' }
+                    ? { duration: 0.45, ease: [0.22, 1, 0.36, 1] }
                     : { type: 'spring', stiffness: 340, damping: 24, delay: idx * 0.015 }
                   }
                   style={{
                     display: 'flex', justifyContent: 'center', marginBottom: -10,
                     filter: isVanishing
-                      ? `drop-shadow(0 0 8px ${COAT_COLORS[item.coat].body}) drop-shadow(0 0 16px ${COAT_COLORS[item.coat].body})`
+                      ? `drop-shadow(0 0 10px ${COAT_COLORS[item.coat].body}) brightness(1.3)`
                       : 'none',
                     zIndex: isVanishing ? 5 : 'auto',
                     position: 'relative',
@@ -399,13 +382,18 @@ function ParticleLayer({ particles }: { particles: Particle[] }) {
         {particles.map(p => (
           <motion.div
             key={p.id}
-            initial={{ x: p.x, y: p.y, scale: 1, opacity: 1 }}
-            animate={{ x: p.x + p.vx * 70, y: p.y + p.vy * 70, scale: 0, opacity: 0 }}
+            initial={{ x: p.x, y: p.y, scale: 1.2, opacity: 1 }}
+            animate={{
+              x: p.x + p.vx * 90,
+              y: p.y + p.vy * 90,
+              scale: 0,
+              opacity: 0,
+            }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.75, ease: 'easeOut' }}
+            transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
             style={{ position: 'absolute', fontSize: p.size, lineHeight: 1 }}
           >
-            {p.type === 'heart' ? '💗' : p.type === 'star' ? '✨' : p.type === 'leaf' ? '🍃' : '⭐'}
+            {'💗'}
           </motion.div>
         ))}
       </AnimatePresence>
@@ -414,14 +402,19 @@ function ParticleLayer({ particles }: { particles: Particle[] }) {
 }
 
 function spawnParticles(x: number, y: number, count: number): Particle[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `p${Date.now()}${i}`,
-    x, y,
-    type: (['heart', 'star', 'sparkle', 'leaf'] as const)[i % 4],
-    vx: (Math.random() - 0.5) * 3.5,
-    vy: -(Math.random() * 2.5 + 0.5),
-    size: 14 + Math.random() * 10,
-  }));
+  // All hearts, bursting in all directions
+  return Array.from({ length: count }, (_, i) => {
+    const angle = (i / count) * Math.PI * 2;
+    const speed = 1.8 + Math.random() * 2.2;
+    return {
+      id: `p${Date.now()}${i}`,
+      x, y,
+      type: 'heart' as const,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 1.2,
+      size: 14 + Math.random() * 12,
+    };
+  });
 }
 
 function makeBubble(text: string, x: number, y: number): SpeechBubble {
@@ -1391,10 +1384,13 @@ export default function Home() {
           setVanishHighlightIds(new Set(step.vanishingIds));
         }, stepStart + SHOW_MS);
 
-        // 3. Transition to post-state (cats removed)
+        // 3. Transition to post-state (cats removed) + hearts explosion
         const t3 = setTimeout(() => {
           setVanishHighlightIds(new Set());
-          setGameState(step.postState);
+          // Spawn hearts burst at the tap location for each vanish step
+          const heartCount = 10 + step.vanishingIds.length * 2;
+          const hearts = spawnParticles(event.clientX ?? 200, event.clientY ?? 350, heartCount);
+          setGameState(prev => prev ? { ...step.postState, particles: [...(prev.particles ?? []), ...hearts] } : step.postState);
           // Show chain banner for combos
           if (i >= 1) {
             setShowChain(i + 1);
@@ -1411,8 +1407,7 @@ export default function Home() {
 
       // 4. After all steps, commit the final resolved state
       const finalT = setTimeout(() => {
-        const particles = spawnParticles(event.clientX ?? 200, event.clientY ?? 350, steps.length * 5);
-        setGameState({ ...result.newState, particles });
+        setGameState({ ...result.newState, particles: [] });
         setVanishHighlightIds(new Set());
         setIsAnimating(false);
 
