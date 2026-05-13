@@ -1,40 +1,37 @@
 /**
  * CatSort Game Engine
- * Design: Kawaii Storybook Illustration
- * Core mechanic: stack-sort transport + merge-N vanish with chunk grab
+ * Design: Warm peach/cream palette, 6 cat coats (ginger/white/black/tabby/calico/siamese)
+ * Each coat has a colorblind-safe non-color cue (stripes/collar/socks/M-mark/patches/mask)
  */
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-export type ColorId = 'coral' | 'periwinkle' | 'sage' | 'peach' | 'lilac' | 'wild';
+export type CoatId = 'ginger' | 'white' | 'black' | 'tabby' | 'calico' | 'siamese';
 
 export interface Item {
   id: string;
-  color: ColorId;
+  coat: CoatId;
   isWild?: boolean;
   isLocked?: boolean;
   isBomb?: boolean;
-  isGoalDouble?: boolean;
 }
 
 export interface Container {
   id: string;
-  grabNumber: number;       // N — how many items are lifted per tap
-  capacity: number;         // max items this container can hold
-  stack: Item[];            // index 0 = bottom, last = top
+  grabNumber: number;
+  capacity: number;
+  stack: Item[];
   position: { x: number; y: number };
-  // Special container variants
-  colorLocked?: ColorId;    // only items of this color may be placed
-  frozen?: boolean;         // no vanish runs until thawed
-  oneWayOut?: boolean;      // items can only leave, not enter
-  oneWayIn?: boolean;       // items can only enter, not leave
-  doubleVanish?: boolean;   // vanish in this container scores 2×
-  narrow?: boolean;         // capacity smaller than others (already encoded in capacity)
-  isGoalContainer?: boolean;// visual hint
+  coatLocked?: CoatId;
+  frozen?: boolean;
+  oneWayOut?: boolean;
+  oneWayIn?: boolean;
+  doubleVanish?: boolean;
+  isGoalContainer?: boolean;
 }
 
 export interface Chunk {
-  items: Item[];            // top-down order (index 0 = was top of source)
+  items: Item[];
   sourceContainerId: string;
 }
 
@@ -52,18 +49,13 @@ export interface BudgetState {
   type: BudgetType;
 }
 
-export type TriggerEvent =
-  | 'onMoveComplete'
-  | 'onVanishComplete'
-  | 'onBudgetWarning'
-  | 'onLevelStart';
+export type TriggerEvent = 'onMoveComplete' | 'onVanishComplete' | 'onBudgetWarning';
 
 export type TriggerAction =
   | { type: 'spawnItems'; containerId: string; items: Item[] }
   | { type: 'freezeContainer'; containerId: string }
   | { type: 'thawContainer'; containerId: string }
-  | { type: 'grantBudget'; moves?: number; seconds?: number }
-  | { type: 'convertItems'; containerId: string; fromColor: ColorId; toColor: ColorId };
+  | { type: 'grantBudget'; moves?: number; seconds?: number };
 
 export interface LevelTrigger {
   event: TriggerEvent;
@@ -75,38 +67,33 @@ export interface LevelTrigger {
 export interface LevelConfig {
   id: number;
   name: string;
+  world: number;
+  levelInWorld: number;
   isBoss: boolean;
-  palette: ColorId[];
-  goalColors: ColorId[];
+  description: string;
+  goalCoats: CoatId[];
   mergeSizeK: number;
   budget: BudgetConfig;
   containers: ContainerConfig[];
   triggers: LevelTrigger[];
-  starThresholds: { two: number; three: number }; // fraction of budget remaining
+  starThresholds: { two: number; three: number };
 }
 
 export interface ContainerConfig {
   id: string;
   grabNumber: number;
   capacity: number;
-  startStack: ColorId[];   // bottom to top
+  startStack: CoatId[];
   position: { x: number; y: number };
-  colorLocked?: ColorId;
+  coatLocked?: CoatId;
   frozen?: boolean;
   oneWayOut?: boolean;
   oneWayIn?: boolean;
   doubleVanish?: boolean;
-  narrow?: boolean;
   isGoalContainer?: boolean;
 }
 
-export type GamePhase =
-  | 'title'
-  | 'levelSelect'
-  | 'playing'
-  | 'levelComplete'
-  | 'levelFail'
-  | 'paused';
+export type GamePhase = 'title' | 'worldMap' | 'playing' | 'levelComplete' | 'levelFail' | 'paused';
 
 export interface GameState {
   phase: GamePhase;
@@ -117,54 +104,44 @@ export interface GameState {
   chunk: Chunk | null;
   score: number;
   chainLength: number;
+  bestChain: number;
   movesCompleted: number;
   vanishesCompleted: number;
-  goalProgress: Record<ColorId, { cleared: number; total: number }>;
+  goalProgress: Record<CoatId, { cleared: number; total: number }>;
   stars: number;
   message: string | null;
+  speechBubbles: SpeechBubble[];
   particles: Particle[];
   currentLevelIndex: number;
+}
+
+export interface SpeechBubble {
+  id: string;
+  text: string;
+  x: number;
+  y: number;
+  life: number;
 }
 
 export interface Particle {
   id: string;
   x: number;
   y: number;
-  color: string;
-  type: 'heart' | 'star' | 'sparkle';
+  type: 'sparkle' | 'heart' | 'star' | 'leaf';
   vx: number;
   vy: number;
-  life: number; // 0-1
   size: number;
 }
 
-// ─── Color palette ────────────────────────────────────────────────────────────
+// ─── Design tokens ────────────────────────────────────────────────────────────
 
-export const COLOR_MAP: Record<ColorId, string> = {
-  coral:      '#F4A0A0',
-  periwinkle: '#A0A8F4',
-  sage:       '#A0D4A0',
-  peach:      '#F4C880',
-  lilac:      '#C8A0F4',
-  wild:       '#F4F4A0',
-};
-
-export const COLOR_DARK: Record<ColorId, string> = {
-  coral:      '#C05050',
-  periwinkle: '#4050C0',
-  sage:       '#406040',
-  peach:      '#C07820',
-  lilac:      '#7040C0',
-  wild:       '#808040',
-};
-
-export const COLOR_EMOJI: Record<ColorId, string> = {
-  coral:      '🐱',
-  periwinkle: '🐱',
-  sage:       '🐱',
-  peach:      '🐱',
-  lilac:      '🐱',
-  wild:       '⭐',
+export const COAT_COLORS: Record<CoatId, { body: string; dark: string; label: string; cue: string }> = {
+  ginger:  { body: '#E8845A', dark: '#C05A30', label: 'Ginger',  cue: 'stripes' },
+  white:   { body: '#F4EEE4', dark: '#C8B898', label: 'White',   cue: 'collar' },
+  black:   { body: '#3A3038', dark: '#1A1020', label: 'Black',   cue: 'socks' },
+  tabby:   { body: '#A89878', dark: '#786848', label: 'Tabby',   cue: 'M-mark' },
+  calico:  { body: '#F4C898', dark: '#C89858', label: 'Calico',  cue: 'patches' },
+  siamese: { body: '#E8D8C0', dark: '#8A6848', label: 'Siamese', cue: 'mask' },
 };
 
 // ─── Utility helpers ──────────────────────────────────────────────────────────
@@ -172,8 +149,8 @@ export const COLOR_EMOJI: Record<ColorId, string> = {
 let _idCounter = 0;
 function uid() { return `i${++_idCounter}`; }
 
-function makeItem(color: ColorId, overrides?: Partial<Item>): Item {
-  return { id: uid(), color, ...overrides };
+function makeItem(coat: CoatId, overrides?: Partial<Item>): Item {
+  return { id: uid(), coat, ...overrides };
 }
 
 function makeContainer(cfg: ContainerConfig): Container {
@@ -183,34 +160,27 @@ function makeContainer(cfg: ContainerConfig): Container {
     capacity: cfg.capacity,
     stack: cfg.startStack.map(c => makeItem(c)),
     position: cfg.position,
-    colorLocked: cfg.colorLocked,
+    coatLocked: cfg.coatLocked,
     frozen: cfg.frozen ?? false,
     oneWayOut: cfg.oneWayOut ?? false,
     oneWayIn: cfg.oneWayIn ?? false,
     doubleVanish: cfg.doubleVanish ?? false,
-    narrow: cfg.narrow ?? false,
     isGoalContainer: cfg.isGoalContainer ?? false,
   };
 }
 
 // ─── Vanish engine ────────────────────────────────────────────────────────────
 
-interface Run { startIdx: number; length: number; color: ColorId }
+interface Run { startIdx: number; length: number; coat: CoatId }
 
-function findSameColorRuns(stack: Item[], k: number): Run[] {
+function findRuns(stack: Item[], k: number): Run[] {
   const runs: Run[] = [];
   let i = 0;
   while (i < stack.length) {
-    const color = stack[i].color;
+    const coat = stack[i].coat;
     let j = i;
-    // wild items count as any color for run detection
-    while (j < stack.length && (stack[j].color === color || stack[j].isWild)) {
-      j++;
-    }
-    const len = j - i;
-    if (len >= k) {
-      runs.push({ startIdx: i, length: len, color });
-    }
+    while (j < stack.length && (stack[j].coat === coat || stack[j].isWild)) j++;
+    if (j - i >= k) runs.push({ startIdx: i, length: j - i, coat });
     i = j;
   }
   return runs;
@@ -220,51 +190,35 @@ interface VanishResult {
   removedItems: Item[];
   chainStep: number;
   scoreGain: number;
-  doubleVanish: boolean;
 }
 
-function resolveVanishes(
-  container: Container,
-  k: number,
-  chainStep: number
-): VanishResult[] {
+function resolveVanishes(container: Container, k: number, chainStep: number): VanishResult[] {
   if (container.frozen) return [];
   const results: VanishResult[] = [];
   let step = chainStep;
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
-    const runs = findSameColorRuns(container.stack, k);
-    if (runs.length === 0) break;
-
-    // Collect all indices to remove
-    const indicesToRemove = new Set<number>();
+    const runs = findRuns(container.stack, k);
+    if (!runs.length) break;
+    const toRemove = new Set<number>();
     for (const run of runs) {
       for (let i = run.startIdx; i < run.startIdx + run.length; i++) {
-        indicesToRemove.add(i);
-        // bomb: also remove item directly below
-        if (container.stack[i].isBomb && i > 0) {
-          indicesToRemove.add(i - 1);
-        }
+        toRemove.add(i);
+        if (container.stack[i].isBomb && i > 0) toRemove.add(i - 1);
       }
     }
-
-    const removed = container.stack.filter((_, idx) => indicesToRemove.has(idx));
-    // locked items block their run
-    const hasLocked = removed.some(it => it.isLocked);
-    if (hasLocked) break;
-
-    container.stack = container.stack.filter((_, idx) => !indicesToRemove.has(idx));
-
-    const multiplier = container.doubleVanish ? 2 : 1;
+    const removed = container.stack.filter((_, i) => toRemove.has(i));
+    if (removed.some(it => it.isLocked)) break;
+    container.stack = container.stack.filter((_, i) => !toRemove.has(i));
+    const mult = container.doubleVanish ? 2 : 1;
     const chainBonus = Math.pow(1.5, step);
-    const goalDoubleBonus = removed.filter(it => it.isGoalDouble).length;
-    const scoreGain = Math.round(removed.length * 10 * multiplier * chainBonus) + goalDoubleBonus * 20;
-
-    results.push({ removedItems: removed, chainStep: step, scoreGain, doubleVanish: container.doubleVanish ?? false });
+    results.push({
+      removedItems: removed,
+      chainStep: step,
+      scoreGain: Math.round(removed.length * 10 * mult * chainBonus),
+    });
     step++;
   }
-
   return results;
 }
 
@@ -272,40 +226,32 @@ function resolveVanishes(
 
 function computeGoalProgress(
   containers: Container[],
-  goalColors: ColorId[],
-  initialCounts: Record<ColorId, number>
-): Record<ColorId, { cleared: number; total: number }> {
-  const remaining: Record<ColorId, number> = {} as Record<ColorId, number>;
-  for (const c of goalColors) remaining[c] = 0;
+  goalCoats: CoatId[],
+  initialCounts: Record<CoatId, number>
+): Record<CoatId, { cleared: number; total: number }> {
+  const remaining: Partial<Record<CoatId, number>> = {};
+  for (const c of goalCoats) remaining[c] = 0;
   for (const cont of containers) {
     for (const item of cont.stack) {
-      if (goalColors.includes(item.color)) {
-        remaining[item.color] = (remaining[item.color] ?? 0) + 1;
-      }
+      if (goalCoats.includes(item.coat)) remaining[item.coat] = (remaining[item.coat] ?? 0) + 1;
     }
   }
-  const progress: Record<ColorId, { cleared: number; total: number }> = {} as Record<ColorId, { cleared: number; total: number }>;
-  for (const c of goalColors) {
+  const progress = {} as Record<CoatId, { cleared: number; total: number }>;
+  for (const c of goalCoats) {
     const total = initialCounts[c] ?? 0;
-    const left = remaining[c] ?? 0;
-    progress[c] = { cleared: total - left, total };
+    progress[c] = { cleared: total - (remaining[c] ?? 0), total };
   }
   return progress;
 }
 
-function checkWin(progress: Record<ColorId, { cleared: number; total: number }>): boolean {
+function checkWin(progress: Record<CoatId, { cleared: number; total: number }>): boolean {
   return Object.values(progress).every(p => p.cleared >= p.total);
 }
 
-// ─── Stars ────────────────────────────────────────────────────────────────────
-
 function computeStars(budget: BudgetState, config: LevelConfig): number {
-  let fraction = 0;
-  if (config.budget.type === 'moves' || config.budget.type === 'both') {
-    fraction = budget.movesLeft / (config.budget.maxMoves ?? 1);
-  } else {
-    fraction = budget.secondsLeft / (config.budget.maxSeconds ?? 1);
-  }
+  const fraction = budget.type === 'time'
+    ? budget.secondsLeft / (config.budget.maxSeconds ?? 1)
+    : budget.movesLeft / (config.budget.maxMoves ?? 1);
   if (fraction >= config.starThresholds.three) return 3;
   if (fraction >= config.starThresholds.two) return 2;
   return 1;
@@ -313,29 +259,20 @@ function computeStars(budget: BudgetState, config: LevelConfig): number {
 
 // ─── Trigger system ───────────────────────────────────────────────────────────
 
-function fireTriggers(
-  event: TriggerEvent,
-  state: GameState,
-  containers: Container[]
-): void {
+function fireTriggers(event: TriggerEvent, state: GameState, containers: Container[]): void {
   if (!state.levelConfig) return;
   for (const trigger of state.levelConfig.triggers) {
     if (trigger.fired) continue;
     if (trigger.event !== event) continue;
-
-    // Check conditions
-    if (trigger.condition?.movesCompleted !== undefined &&
-        state.movesCompleted < trigger.condition.movesCompleted) continue;
-    if (trigger.condition?.vanishesCompleted !== undefined &&
-        state.vanishesCompleted < trigger.condition.vanishesCompleted) continue;
+    if (trigger.condition?.movesCompleted !== undefined && state.movesCompleted < trigger.condition.movesCompleted) continue;
+    if (trigger.condition?.vanishesCompleted !== undefined && state.vanishesCompleted < trigger.condition.vanishesCompleted) continue;
 
     const action = trigger.action;
     const target = containers.find(c => c.id === (action as { containerId?: string }).containerId);
 
     if (action.type === 'spawnItems' && target) {
-      const freeSpace = target.capacity - target.stack.length;
-      const toAdd = action.items.slice(0, freeSpace);
-      target.stack.push(...toAdd.map(it => ({ ...it, id: uid() })));
+      const free = target.capacity - target.stack.length;
+      target.stack.push(...action.items.slice(0, free).map(it => ({ ...it, id: uid() })));
     } else if (action.type === 'freezeContainer' && target) {
       target.frozen = true;
     } else if (action.type === 'thawContainer' && target) {
@@ -343,17 +280,12 @@ function fireTriggers(
     } else if (action.type === 'grantBudget') {
       if (action.moves) state.budget.movesLeft += action.moves;
       if (action.seconds) state.budget.secondsLeft += action.seconds;
-    } else if (action.type === 'convertItems' && target) {
-      target.stack = target.stack.map(it =>
-        it.color === action.fromColor ? { ...it, color: action.toColor } : it
-      );
     }
-
     trigger.fired = true;
   }
 }
 
-// ─── Main action: executeMove ─────────────────────────────────────────────────
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 export interface MoveResult {
   success: boolean;
@@ -372,23 +304,15 @@ export function grabChunk(state: GameState, sourceId: string): GameState {
   if (source.stack.length < source.grabNumber) {
     return { ...state, message: `Need at least ${source.grabNumber} cats to grab!` };
   }
-
-  const n = source.grabNumber;
-  const grabbed = source.stack.splice(source.stack.length - n, n).reverse(); // top-first
-  const chunk: Chunk = { items: grabbed, sourceContainerId: sourceId };
-
-  return { ...state, containers, selectedContainerId: sourceId, chunk, message: null };
+  const grabbed = source.stack.splice(source.stack.length - source.grabNumber, source.grabNumber).reverse();
+  return { ...state, containers, selectedContainerId: sourceId, chunk: { items: grabbed, sourceContainerId: sourceId }, message: null };
 }
 
 export function cancelGrab(state: GameState): GameState {
   if (!state.chunk) return state;
-  // Return items to source
   const containers = state.containers.map(c => ({ ...c, stack: [...c.stack] }));
   const source = containers.find(c => c.id === state.chunk!.sourceContainerId);
-  if (source) {
-    const returned = [...state.chunk.items].reverse(); // restore original order
-    source.stack.push(...returned);
-  }
+  if (source) source.stack.push(...[...state.chunk.items].reverse());
   return { ...state, containers, chunk: null, selectedContainerId: null, message: null };
 }
 
@@ -396,74 +320,41 @@ export function placeChunk(state: GameState, targetId: string): MoveResult {
   if (!state.chunk || !state.levelConfig) {
     return { success: false, error: 'No chunk in flight', vanishResults: [], won: false, failed: false, newState: state };
   }
-
-  const containers = state.containers.map(c => ({
-    ...c,
-    stack: c.stack.map(it => ({ ...it })),
-  }));
+  const containers = state.containers.map(c => ({ ...c, stack: c.stack.map(it => ({ ...it })) }));
   const target = containers.find(c => c.id === targetId);
   const chunk = state.chunk;
 
-  if (!target) {
-    return { success: false, error: 'Target not found', vanishResults: [], won: false, failed: false, newState: state };
-  }
-
-  // Self-placement is illegal
+  if (!target) return { success: false, error: 'Target not found', vanishResults: [], won: false, failed: false, newState: state };
   if (targetId === chunk.sourceContainerId) {
-    const restored = cancelGrab(state);
-    return { success: false, error: 'Cannot place on same tower', vanishResults: [], won: false, failed: false, newState: restored };
+    return { success: false, error: 'Cannot place on same tower', vanishResults: [], won: false, failed: false, newState: cancelGrab(state) };
   }
-
-  // One-way-out: cannot receive
-  if (target.oneWayOut) {
-    return { success: false, error: 'This tower only sends cats out!', vanishResults: [], won: false, failed: false, newState: state };
-  }
-
-  // Color-locked: only matching color
-  if (target.colorLocked) {
-    const allMatch = chunk.items.every(it => it.color === target.colorLocked || it.isWild);
-    if (!allMatch) {
-      return { success: false, error: `Only ${target.colorLocked} cats here!`, vanishResults: [], won: false, failed: false, newState: state };
+  if (target.oneWayOut) return { success: false, error: 'This tower only sends cats out!', vanishResults: [], won: false, failed: false, newState: state };
+  if (target.coatLocked) {
+    if (!chunk.items.every(it => it.coat === target.coatLocked || it.isWild)) {
+      return { success: false, error: `Only ${COAT_COLORS[target.coatLocked].label} cats here!`, vanishResults: [], won: false, failed: false, newState: state };
     }
   }
-
-  // Capacity check
-  const freeSpace = target.capacity - target.stack.length;
-  if (freeSpace < chunk.items.length) {
+  if (target.capacity - target.stack.length < chunk.items.length) {
     return { success: false, error: 'Not enough space!', vanishResults: [], won: false, failed: false, newState: state };
   }
 
-  // Place chunk (items in chunk are top-first, push in reverse so original top ends up on top)
-  const toPlace = [...chunk.items].reverse();
-  target.stack.push(...toPlace);
-
-  // Vanish scan
+  target.stack.push(...[...chunk.items].reverse());
   const vanishResults = resolveVanishes(target, state.levelConfig.mergeSizeK, 0);
 
-  // Score
   let scoreGain = 0;
-  let totalVanished = 0;
-  for (const vr of vanishResults) {
-    scoreGain += vr.scoreGain;
-    totalVanished += vr.removedItems.length;
-  }
+  for (const vr of vanishResults) scoreGain += vr.scoreGain;
 
-  // Budget decrement
   const budget = { ...state.budget };
-  if (budget.type === 'moves' || budget.type === 'both') {
-    budget.movesLeft = Math.max(0, budget.movesLeft - 1);
-  }
+  if (budget.type === 'moves' || budget.type === 'both') budget.movesLeft = Math.max(0, budget.movesLeft - 1);
 
   const movesCompleted = state.movesCompleted + 1;
   const vanishesCompleted = state.vanishesCompleted + (vanishResults.length > 0 ? 1 : 0);
+  const chainLength = vanishResults.length;
+  const bestChain = Math.max(state.bestChain, chainLength);
 
-  // Compute goal progress
-  const goalColors = state.levelConfig.goalColors;
-  const initialCounts: Record<ColorId, number> = {} as Record<ColorId, number>;
-  for (const c of goalColors) {
-    initialCounts[c] = state.goalProgress[c]?.total ?? 0;
-  }
-  const goalProgress = computeGoalProgress(containers, goalColors, initialCounts);
+  const initialCounts: Record<CoatId, number> = {} as Record<CoatId, number>;
+  for (const c of state.levelConfig.goalCoats) initialCounts[c] = state.goalProgress[c]?.total ?? 0;
+  const goalProgress = computeGoalProgress(containers, state.levelConfig.goalCoats, initialCounts);
 
   const newState: GameState = {
     ...state,
@@ -471,25 +362,23 @@ export function placeChunk(state: GameState, targetId: string): MoveResult {
     chunk: null,
     selectedContainerId: null,
     score: state.score + scoreGain,
-    chainLength: vanishResults.length,
+    chainLength,
+    bestChain,
     movesCompleted,
     vanishesCompleted,
     budget,
     goalProgress,
     message: null,
+    speechBubbles: [],
     particles: [],
   };
 
-  // Fire triggers
   fireTriggers('onMoveComplete', newState, containers);
-  if (vanishResults.length > 0) {
-    fireTriggers('onVanishComplete', newState, containers);
-  }
+  if (vanishResults.length > 0) fireTriggers('onVanishComplete', newState, containers);
   if (budget.movesLeft <= Math.ceil((state.levelConfig.budget.maxMoves ?? 20) * 0.3)) {
     fireTriggers('onBudgetWarning', newState, containers);
   }
 
-  // Win / fail check
   const won = checkWin(goalProgress);
   const failed = !won && budget.movesLeft === 0 && (budget.type === 'moves' || budget.type === 'both');
 
@@ -500,145 +389,106 @@ export function placeChunk(state: GameState, targetId: string): MoveResult {
   if (failed) {
     return { success: true, vanishResults, won: false, failed: true, newState: { ...newState, phase: 'levelFail' } };
   }
-
   return { success: true, vanishResults, won: false, failed: false, newState };
 }
 
 // ─── Level definitions ────────────────────────────────────────────────────────
 
 export const LEVELS: LevelConfig[] = [
-  // Level 1 — Tutorial: merge-2, 3 containers, single goal color
   {
-    id: 1,
-    name: 'Cozy Corner',
-    isBoss: false,
-    palette: ['coral', 'periwinkle', 'sage'],
-    goalColors: ['coral'],
+    id: 1, name: 'Sunny Windowsill', world: 1, levelInWorld: 1, isBoss: false,
+    description: 'Send the ginger kittens home',
+    goalCoats: ['ginger'],
     mergeSizeK: 2,
-    budget: { type: 'moves', maxMoves: 20 },
+    budget: { type: 'moves', maxMoves: 18 },
     starThresholds: { two: 0.3, three: 0.6 },
     triggers: [],
     containers: [
-      { id: 'c1', grabNumber: 2, capacity: 6, position: { x: 0, y: 0 },
-        startStack: ['periwinkle', 'coral', 'sage', 'coral'] },
-      { id: 'c2', grabNumber: 2, capacity: 6, position: { x: 1, y: 0 },
-        startStack: ['coral', 'sage', 'coral', 'periwinkle'] },
-      { id: 'c3', grabNumber: 2, capacity: 6, position: { x: 2, y: 0 },
-        startStack: ['sage', 'periwinkle', 'sage'] },
-      { id: 'c4', grabNumber: 2, capacity: 6, position: { x: 3, y: 0 },
-        startStack: [] },
+      { id: 'c1', grabNumber: 2, capacity: 6, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'ginger'] },
+      { id: 'c2', grabNumber: 2, capacity: 6, position: { x: 1, y: 0 }, startStack: ['ginger', 'tabby', 'ginger', 'white'] },
+      { id: 'c3', grabNumber: 2, capacity: 6, position: { x: 2, y: 0 }, startStack: ['tabby', 'white', 'tabby'] },
+      { id: 'c4', grabNumber: 2, capacity: 6, position: { x: 3, y: 0 }, startStack: [] },
     ],
   },
-
-  // Level 2 — Two goal colors, merge-3
   {
-    id: 2,
-    name: 'Paw Patrol',
-    isBoss: false,
-    palette: ['coral', 'periwinkle', 'sage', 'peach'],
-    goalColors: ['coral', 'sage'],
+    id: 2, name: 'Bookshelf Nap', world: 1, levelInWorld: 2, isBoss: false,
+    description: 'Sort the white and tabby kittens',
+    goalCoats: ['white', 'tabby'],
     mergeSizeK: 3,
-    budget: { type: 'moves', maxMoves: 25 },
+    budget: { type: 'moves', maxMoves: 24 },
     starThresholds: { two: 0.3, three: 0.55 },
     triggers: [],
     containers: [
-      { id: 'c1', grabNumber: 2, capacity: 8, position: { x: 0, y: 0 },
-        startStack: ['peach', 'coral', 'sage', 'coral', 'periwinkle'] },
-      { id: 'c2', grabNumber: 3, capacity: 8, position: { x: 1, y: 0 },
-        startStack: ['sage', 'coral', 'peach', 'sage', 'coral'] },
-      { id: 'c3', grabNumber: 2, capacity: 8, position: { x: 2, y: 0 },
-        startStack: ['coral', 'periwinkle', 'sage', 'peach'] },
-      { id: 'c4', grabNumber: 3, capacity: 8, position: { x: 3, y: 0 },
-        startStack: ['periwinkle', 'sage', 'coral', 'peach'] },
-      { id: 'c5', grabNumber: 2, capacity: 8, position: { x: 4, y: 0 },
-        startStack: [] },
+      { id: 'c1', grabNumber: 2, capacity: 8, position: { x: 0, y: 0 }, startStack: ['calico', 'white', 'tabby', 'white', 'ginger'] },
+      { id: 'c2', grabNumber: 3, capacity: 8, position: { x: 1, y: 0 }, startStack: ['tabby', 'white', 'calico', 'tabby', 'white'] },
+      { id: 'c3', grabNumber: 2, capacity: 8, position: { x: 2, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'calico'] },
+      { id: 'c4', grabNumber: 3, capacity: 8, position: { x: 3, y: 0 }, startStack: ['ginger', 'tabby', 'white', 'calico'] },
+      { id: 'c5', grabNumber: 2, capacity: 8, position: { x: 4, y: 0 }, startStack: [] },
     ],
   },
-
-  // Level 3 — Color-locked special container + merge-2
   {
-    id: 3,
-    name: 'Lilac Lounge',
-    isBoss: false,
-    palette: ['coral', 'lilac', 'peach'],
-    goalColors: ['lilac'],
+    id: 3, name: 'Calico Corner', world: 1, levelInWorld: 3, isBoss: false,
+    description: 'Collect all the calico cats',
+    goalCoats: ['calico'],
     mergeSizeK: 2,
-    budget: { type: 'moves', maxMoves: 22 },
+    budget: { type: 'moves', maxMoves: 20 },
     starThresholds: { two: 0.3, three: 0.55 },
     triggers: [],
     containers: [
-      { id: 'c1', grabNumber: 2, capacity: 6, position: { x: 0, y: 0 },
-        startStack: ['peach', 'lilac', 'coral', 'lilac'] },
-      { id: 'c2', grabNumber: 2, capacity: 6, position: { x: 1, y: 0 },
-        startStack: ['lilac', 'coral', 'peach', 'lilac'] },
-      { id: 'c3', grabNumber: 2, capacity: 6, position: { x: 2, y: 0 },
-        startStack: ['coral', 'lilac', 'peach'] },
-      { id: 'c4', grabNumber: 2, capacity: 4, position: { x: 3, y: 0 },
-        startStack: [], colorLocked: 'lilac', isGoalContainer: true },
-      { id: 'c5', grabNumber: 2, capacity: 6, position: { x: 4, y: 0 },
-        startStack: [] },
+      { id: 'c1', grabNumber: 2, capacity: 6, position: { x: 0, y: 0 }, startStack: ['siamese', 'calico', 'black', 'calico'] },
+      { id: 'c2', grabNumber: 2, capacity: 6, position: { x: 1, y: 0 }, startStack: ['calico', 'black', 'siamese', 'calico'] },
+      { id: 'c3', grabNumber: 2, capacity: 6, position: { x: 2, y: 0 }, startStack: ['black', 'calico', 'siamese'] },
+      { id: 'c4', grabNumber: 2, capacity: 4, position: { x: 3, y: 0 }, startStack: [], coatLocked: 'calico', isGoalContainer: true },
+      { id: 'c5', grabNumber: 2, capacity: 6, position: { x: 4, y: 0 }, startStack: [] },
     ],
   },
-
-  // Level 4 — Trigger: spawn items after 5 moves + merge-3
   {
-    id: 4,
-    name: 'Surprise Party',
-    isBoss: false,
-    palette: ['coral', 'periwinkle', 'sage', 'peach', 'lilac'],
-    goalColors: ['peach'],
+    id: 4, name: 'Surprise Guests', world: 1, levelInWorld: 4, isBoss: false,
+    description: 'Send the siamese cats to rest',
+    goalCoats: ['siamese'],
     mergeSizeK: 3,
-    budget: { type: 'moves', maxMoves: 30 },
+    budget: { type: 'moves', maxMoves: 28 },
     starThresholds: { two: 0.25, three: 0.5 },
     triggers: [
       {
         event: 'onMoveComplete',
         condition: { movesCompleted: 5 },
         action: { type: 'spawnItems', containerId: 'c1', items: [
-          { id: 'sp1', color: 'coral' },
-          { id: 'sp2', color: 'periwinkle' },
+          { id: 'sp1', coat: 'black' },
+          { id: 'sp2', coat: 'ginger' },
         ] },
       },
     ],
     containers: [
-      { id: 'c1', grabNumber: 3, capacity: 8, position: { x: 0, y: 0 },
-        startStack: ['periwinkle', 'peach', 'sage', 'coral', 'peach'] },
-      { id: 'c2', grabNumber: 2, capacity: 8, position: { x: 1, y: 0 },
-        startStack: ['peach', 'lilac', 'coral', 'peach', 'sage'] },
-      { id: 'c3', grabNumber: 3, capacity: 8, position: { x: 2, y: 0 },
-        startStack: ['sage', 'peach', 'lilac', 'periwinkle'] },
-      { id: 'c4', grabNumber: 2, capacity: 8, position: { x: 3, y: 0 },
-        startStack: ['coral', 'peach', 'sage'] },
-      { id: 'c5', grabNumber: 3, capacity: 8, position: { x: 4, y: 0 },
-        startStack: [] },
+      { id: 'c1', grabNumber: 3, capacity: 8, position: { x: 0, y: 0 }, startStack: ['ginger', 'siamese', 'tabby', 'black', 'siamese'] },
+      { id: 'c2', grabNumber: 2, capacity: 8, position: { x: 1, y: 0 }, startStack: ['siamese', 'calico', 'black', 'siamese', 'tabby'] },
+      { id: 'c3', grabNumber: 3, capacity: 8, position: { x: 2, y: 0 }, startStack: ['tabby', 'siamese', 'calico', 'ginger'] },
+      { id: 'c4', grabNumber: 2, capacity: 8, position: { x: 3, y: 0 }, startStack: ['black', 'siamese', 'tabby'] },
+      { id: 'c5', grabNumber: 3, capacity: 8, position: { x: 4, y: 0 }, startStack: [] },
     ],
   },
-
-  // Level 5 — Boss: tight budget + spawn trigger every 3 moves
   {
-    id: 5,
-    name: '⚡ Boss: Tower Rush',
-    isBoss: true,
-    palette: ['coral', 'periwinkle', 'sage', 'peach', 'lilac'],
-    goalColors: ['coral', 'periwinkle'],
+    id: 5, name: 'Moonlit Window', world: 1, levelInWorld: 5, isBoss: true,
+    description: 'Clear two coats before dawn',
+    goalCoats: ['ginger', 'white'],
     mergeSizeK: 3,
-    budget: { type: 'moves', maxMoves: 20 },
+    budget: { type: 'moves', maxMoves: 18 },
     starThresholds: { two: 0.2, three: 0.45 },
     triggers: [
       {
         event: 'onMoveComplete',
         condition: { movesCompleted: 3 },
         action: { type: 'spawnItems', containerId: 'c2', items: [
-          { id: 'b1', color: 'lilac' },
-          { id: 'b2', color: 'sage' },
+          { id: 'b1', coat: 'black' },
+          { id: 'b2', coat: 'tabby' },
         ] },
       },
       {
         event: 'onMoveComplete',
         condition: { movesCompleted: 8 },
         action: { type: 'spawnItems', containerId: 'c3', items: [
-          { id: 'b3', color: 'peach' },
-          { id: 'b4', color: 'lilac' },
+          { id: 'b3', coat: 'calico' },
+          { id: 'b4', coat: 'siamese' },
         ] },
       },
       {
@@ -648,61 +498,47 @@ export const LEVELS: LevelConfig[] = [
       },
     ],
     containers: [
-      { id: 'c1', grabNumber: 3, capacity: 9, position: { x: 0, y: 0 },
-        startStack: ['periwinkle', 'coral', 'sage', 'coral', 'periwinkle', 'lilac'] },
-      { id: 'c2', grabNumber: 2, capacity: 9, position: { x: 1, y: 0 },
-        startStack: ['coral', 'periwinkle', 'peach', 'coral', 'sage'] },
-      { id: 'c3', grabNumber: 3, capacity: 9, position: { x: 2, y: 0 },
-        startStack: ['sage', 'periwinkle', 'coral', 'lilac', 'peach'] },
-      { id: 'c4', grabNumber: 2, capacity: 9, position: { x: 3, y: 0 },
-        startStack: ['periwinkle', 'coral', 'sage'] },
-      { id: 'c5', grabNumber: 3, capacity: 9, position: { x: 4, y: 0 },
-        startStack: [] },
+      { id: 'c1', grabNumber: 3, capacity: 9, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'ginger', 'white', 'black'] },
+      { id: 'c2', grabNumber: 2, capacity: 9, position: { x: 1, y: 0 }, startStack: ['ginger', 'white', 'calico', 'ginger', 'tabby'] },
+      { id: 'c3', grabNumber: 3, capacity: 9, position: { x: 2, y: 0 }, startStack: ['tabby', 'white', 'ginger', 'black', 'calico'] },
+      { id: 'c4', grabNumber: 2, capacity: 9, position: { x: 3, y: 0 }, startStack: ['white', 'ginger', 'tabby'] },
+      { id: 'c5', grabNumber: 3, capacity: 9, position: { x: 4, y: 0 }, startStack: [] },
     ],
   },
 ];
 
-// ─── Initial state factory ────────────────────────────────────────────────────
+// ─── State factory ────────────────────────────────────────────────────────────
 
 export function initLevelState(levelConfig: LevelConfig, levelIndex: number): GameState {
   const containers = levelConfig.containers.map(makeContainer);
-
-  // Count initial goal items
-  const goalProgress: Record<ColorId, { cleared: number; total: number }> = {} as Record<ColorId, { cleared: number; total: number }>;
-  for (const color of levelConfig.goalColors) {
+  const goalProgress = {} as Record<CoatId, { cleared: number; total: number }>;
+  for (const coat of levelConfig.goalCoats) {
     let total = 0;
-    for (const c of containers) {
-      for (const it of c.stack) {
-        if (it.color === color) total++;
-      }
-    }
-    goalProgress[color] = { cleared: 0, total };
+    for (const c of containers) for (const it of c.stack) if (it.coat === coat) total++;
+    goalProgress[coat] = { cleared: 0, total };
   }
-
   const budget: BudgetState = {
     type: levelConfig.budget.type,
     movesLeft: levelConfig.budget.maxMoves ?? 999,
     secondsLeft: levelConfig.budget.maxSeconds ?? 999,
   };
-
-  // Reset trigger fired flags
   const triggers = levelConfig.triggers.map(t => ({ ...t, fired: false }));
-  const resetConfig = { ...levelConfig, triggers };
-
   return {
     phase: 'playing',
-    levelConfig: resetConfig,
+    levelConfig: { ...levelConfig, triggers },
     containers,
     budget,
     selectedContainerId: null,
     chunk: null,
     score: 0,
     chainLength: 0,
+    bestChain: 0,
     movesCompleted: 0,
     vanishesCompleted: 0,
     goalProgress,
     stars: 0,
     message: null,
+    speechBubbles: [],
     particles: [],
     currentLevelIndex: levelIndex,
   };
