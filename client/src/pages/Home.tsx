@@ -1009,8 +1009,9 @@ const WORLDS = [
   { id: 4, name: 'Dream Palace',     emoji: '✨', bg: `linear-gradient(180deg, #2A1840 0%, #1A1028 100%)`, pathColor: '#6A4888', accent: '#E8B8F8' },
 ];
 
-// Zigzag x positions for saga path nodes (alternating left/right)
-const SAGA_X = [0.5, 0.75, 0.5, 0.25, 0.5]; // 5 levels per world
+// Zigzag x positions for saga path nodes — index 0 = boss (top of world section)
+// Pattern: boss center, then zigzag down to L1 at bottom
+const SAGA_X = [0.5, 0.25, 0.5, 0.75, 0.5]; // reversed: boss=center, then left, center, right, center
 
 function WorldMap({ onSelect, completedLevels, onBack }: {
   onSelect: (idx: number) => void;
@@ -1021,13 +1022,28 @@ function WorldMap({ onSelect, completedLevels, onBack }: {
   const nextIdx = LEVELS.findIndex(l => !(completedLevels[l.id] >= 1));
 
   // Scroll to the next unlocked level on mount
+  // Worlds render in reverse (World 4 at top, World 1 at bottom), so we scroll to bottom for new players
   const scrollRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (nextIdx > 0 && scrollRef.current) {
-      const nodeHeight = 120;
-      const target = Math.max(0, nextIdx * nodeHeight - 200);
-      scrollRef.current.scrollTop = target;
-    }
+    // Defer scroll until after paint so scrollHeight is accurate
+    const raf = requestAnimationFrame(() => {
+      if (!scrollRef.current) return;
+      if (nextIdx <= 0) {
+        // New player — scroll to bottom (World 1 is at the bottom)
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      } else {
+        // Scroll so the next level node is visible
+        // Worlds are reversed (W4 top, W1 bottom). Each node ~90px.
+        const totalNodes = LEVELS.length;
+        const nodesFromBottom = totalNodes - nextIdx;
+        const nodeHeight = 90;
+        const scrollHeight = scrollRef.current.scrollHeight;
+        const clientHeight = scrollRef.current.clientHeight;
+        const fromBottom = nodesFromBottom * nodeHeight;
+        scrollRef.current.scrollTop = Math.max(0, scrollHeight - fromBottom - clientHeight / 2);
+      }
+    });
+    return () => cancelAnimationFrame(raf);
   }, [nextIdx]);
 
   return (
@@ -1068,9 +1084,9 @@ function WorldMap({ onSelect, completedLevels, onBack }: {
         </div>
       </div>
 
-      {/* Scrollable saga path */}
+      {/* Scrollable saga path — World 4 at top, World 1 at bottom (scroll down = easier) */}
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-        {WORLDS.map(world => {
+        {[...WORLDS].reverse().map(world => {
           const worldLevels = LEVELS.filter(l => l.world === world.id);
           const isDark = world.id >= 3;
           const textColor = isDark ? '#F0E8FF' : C.brown;
@@ -1090,9 +1106,9 @@ function WorldMap({ onSelect, completedLevels, onBack }: {
                 </div>
               </div>
 
-              {/* Level nodes in zigzag */}
+              {/* Level nodes in zigzag — reversed so boss (L5/10/15/20) is at top of each world */}
               <div style={{ position: 'relative', padding: '0 0 16px' }}>
-                {worldLevels.map((level, i) => {
+                {[...worldLevels].reverse().map((level, i) => {
                   const idx = LEVELS.indexOf(level);
                   const stars = completedLevels[level.id] ?? 0;
                   const locked = idx > 0 && !(completedLevels[LEVELS[idx - 1].id] >= 1);
@@ -1374,10 +1390,26 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, v
     }}>
       <HUD state={state} onPause={onPause} isBoss={isBoss} />
 
+      {/* Merge-K badge */}
+      <div style={{
+        display: 'flex', justifyContent: 'center', paddingTop: 6, paddingBottom: 2, flexShrink: 0,
+      }}>
+        <div style={{
+          fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 12,
+          letterSpacing: 1.5,
+          color: isBoss ? 'rgba(244,220,120,0.9)' : C.accent,
+          background: isBoss ? 'rgba(255,255,255,0.07)' : 'rgba(232,116,90,0.1)',
+          border: `1.5px solid ${isBoss ? 'rgba(244,220,120,0.3)' : 'rgba(232,116,90,0.25)'}`,
+          borderRadius: 20, padding: '3px 14px',
+        }}>
+          MERGE {cfg.mergeSizeK}
+        </div>
+      </div>
+
       {/* Tower area — vertically centered */}
       <div style={{
         flex: 1, display: 'flex', alignItems: 'center',
-        justifyContent: 'center', padding: '8px 8px 8px',
+        justifyContent: 'center', padding: '4px 8px 8px',
         overflowY: 'auto',
       }}>
         <div style={{
