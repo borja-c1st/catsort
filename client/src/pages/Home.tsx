@@ -93,9 +93,10 @@ function getBedImg(containerIndex: number): string {
 
 /**
  * Wraps a single cat in a continuous idle wobble:
- *   scale: 1 + 0.05 * cos(t * freq + phase)  → oscillates 0.95 – 1.0
- *   rotate: sin(t * freq * 0.7 + phase) deg  → oscillates -1 – +1
- * Each cat gets a unique phase so they don’t all move in lockstep.
+ *   scale: oscillates 0.92 – 1.0 via cosine squish
+ *   rotate: oscillates -3 – +3 deg via sine
+ *   y: subtle 2px vertical bob via a slower sine
+ * Each cat has a unique phase so the tower looks alive, not robotic.
  */
 function CatIdleWrapper({ children, phase, disabled }: {
   children: React.ReactNode;
@@ -110,14 +111,20 @@ function CatIdleWrapper({ children, phase, disabled }: {
       if (ref.current) ref.current.style.transform = '';
       return;
     }
-    const FREQ = 1.4; // radians per second
+    const FREQ = 2.2;      // main wobble speed (rad/s)
+    const BOB_FREQ = 1.1;  // vertical bob speed
     const start = performance.now();
     const tick = (now: number) => {
       const t = (now - start) / 1000;
-      const scale = 1 - 0.05 * (1 - Math.cos(t * FREQ + phase)) / 2; // 0.95 – 1.0
-      const rot = Math.sin(t * FREQ * 0.7 + phase); // -1 – +1 deg
+      // Cosine squish: 0.92 – 1.0
+      const scale = 0.96 + 0.04 * Math.cos(t * FREQ + phase);
+      // Sine rotation: -3 – +3 deg
+      const rot = 3 * Math.sin(t * FREQ * 0.65 + phase);
+      // Vertical bob: -2 – 0 px
+      const ty = -1.5 * (1 + Math.sin(t * BOB_FREQ + phase + Math.PI / 2));
       if (ref.current) {
-        ref.current.style.transform = `scale(${scale.toFixed(4)}) rotate(${rot.toFixed(3)}deg)`;
+        ref.current.style.transform =
+          `translateY(${ty.toFixed(2)}px) scale(${scale.toFixed(4)}) rotate(${rot.toFixed(3)}deg)`;
       }
       rafRef.current = requestAnimationFrame(tick);
     };
@@ -381,14 +388,15 @@ function FloatingChunk({ chunk }: { chunk: NonNullable<GameState['chunk']> }) {
         <motion.div
           key={item.id}
           animate={{
-            y: [0, -5, 0, -3, 0],
-            rotate: [0, i % 2 === 0 ? 6 : -6, 0, i % 2 === 0 ? 4 : -4, 0],
+            y: [0, -10, 2, -7, 0],
+            rotate: [0, i % 2 === 0 ? 12 : -12, 0, i % 2 === 0 ? 8 : -8, 0],
+            scale: [1, 1.08, 0.95, 1.04, 1],
           }}
           transition={{
             repeat: Infinity,
-            duration: 0.9 + i * 0.12,
+            duration: 0.65 + i * 0.1,
             ease: 'easeInOut',
-            delay: i * 0.08,
+            delay: i * 0.07,
           }}
         >
           <CatImg coat={item.coat} size={46} />
