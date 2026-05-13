@@ -302,32 +302,69 @@ function TowerContainer({
 
 // ─── Floating chunk tray ──────────────────────────────────────────────────────
 
-function ChunkTray({ chunk }: { chunk: NonNullable<GameState['chunk']> }) {
+/**
+ * FloatingChunk — cats cluster near the cursor/touch point and wiggle.
+ * Follows pointermove / touchmove globally while a chunk is held.
+ */
+function FloatingChunk({ chunk }: { chunk: NonNullable<GameState['chunk']> }) {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const onPointer = (e: PointerEvent) => setPos({ x: e.clientX, y: e.clientY });
+    const onTouch = (e: TouchEvent) => {
+      if (e.touches.length > 0) setPos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+    };
+    window.addEventListener('pointermove', onPointer);
+    window.addEventListener('touchmove', onTouch, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onPointer);
+      window.removeEventListener('touchmove', onTouch);
+    };
+  }, []);
+
+  // Offset so the cluster appears above-left of the finger/cursor
+  const offsetX = -28;
+  const offsetY = -28;
+
+  const x = pos ? pos.x + offsetX : window.innerWidth / 2;
+  const y = pos ? pos.y + offsetY : 90;
+
   return (
     <motion.div
-      initial={{ y: 20, opacity: 0, scale: 0.9 }}
-      animate={{ y: 0, opacity: 1, scale: 1 }}
-      exit={{ y: 10, opacity: 0, scale: 0.9 }}
+      initial={{ scale: 0.7, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 0.6, opacity: 0 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 22 }}
       style={{
-        position: 'fixed', top: 80, left: '50%', transform: 'translateX(-50%)',
-        zIndex: 50, pointerEvents: 'none',
-        background: 'rgba(255,243,232,0.97)',
-        border: `2px solid ${C.accent}`,
-        borderRadius: 20,
-        padding: '8px 16px',
-        boxShadow: '0 4px 24px rgba(232,116,90,0.25)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+        position: 'fixed',
+        left: x,
+        top: y,
+        zIndex: 60,
+        pointerEvents: 'none',
+        display: 'flex',
+        gap: chunk.items.length > 2 ? 2 : 4,
+        alignItems: 'center',
+        justifyContent: 'center',
+        filter: 'drop-shadow(0 4px 12px rgba(232,116,90,0.45))',
       }}
     >
-      <div style={{ fontSize: 11, fontWeight: 700, color: C.accent, fontFamily: 'Nunito, sans-serif' }}>
-        Carrying {chunk.items.length} {chunk.items.length === 1 ? 'cat' : 'cats'}
-      </div>
-      <div style={{ display: 'flex', gap: 4 }}>
-        {chunk.items.map((item, i) => <CatImg key={i} coat={item.coat} size={44} />)}
-      </div>
-      <div style={{ fontSize: 13, color: C.brownMid, fontFamily: 'Caveat, cursive' }}>
-        tap a tower to place ♥
-      </div>
+      {chunk.items.map((item, i) => (
+        <motion.div
+          key={item.id}
+          animate={{
+            y: [0, -5, 0, -3, 0],
+            rotate: [0, i % 2 === 0 ? 6 : -6, 0, i % 2 === 0 ? 4 : -4, 0],
+          }}
+          transition={{
+            repeat: Infinity,
+            duration: 0.9 + i * 0.12,
+            ease: 'easeInOut',
+            delay: i * 0.08,
+          }}
+        >
+          <CatImg coat={item.coat} size={46} />
+        </motion.div>
+      ))}
     </motion.div>
   );
 }
@@ -1305,11 +1342,19 @@ export default function Home() {
       }
     } else {
       // Place phase
+      // Tapping the source container → free cancel (no move cost)
+      if (containerId === gameState.chunk.sourceContainerId) {
+        setGameState(cancelGrab(gameState));
+        return;
+      }
+
       const savedState = gameState;
       const result = placeChunk(gameState, containerId);
 
       if (!result.success) {
-        setGameState({ ...gameState, message: result.error ?? 'Cannot place here!' });
+        // Invalid placement → free cancel, show error message briefly
+        const cancelled = cancelGrab(gameState);
+        setGameState({ ...cancelled, message: result.error ?? 'Cannot place here!' });
         return;
       }
 
@@ -1379,7 +1424,7 @@ export default function Home() {
       />
 
       <AnimatePresence>
-        {gameState.chunk && <ChunkTray chunk={gameState.chunk} />}
+        {gameState.chunk && <FloatingChunk chunk={gameState.chunk} />}
       </AnimatePresence>
 
       <SpeechBubbleLayer bubbles={gameState.speechBubbles} />
