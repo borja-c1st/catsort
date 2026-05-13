@@ -75,75 +75,27 @@ function CatImg({ coat, size = 52 }: { coat: CoatId; size?: number }) {
   );
 }
 
-// ─── Pillar cap (top decorative arch) ────────────────────────────────────────
+// ─── Bed images for tower bases ───────────────────────────────────────────────
 
-function PillarCap({ isBoss }: { isBoss: boolean }) {
-  return (
-    <div style={{
-      width: '100%', height: 14,
-      background: isBoss
-        ? 'linear-gradient(180deg, #4A4870 0%, #3A3860 100%)'
-        : `linear-gradient(180deg, ${C.platform} 0%, ${C.platformDark} 100%)`,
-      borderRadius: '12px 12px 4px 4px',
-      boxShadow: isBoss ? '0 2px 6px rgba(0,0,0,0.4)' : `0 2px 4px ${C.platformDark}88`,
-    }} />
-  );
-}
+const BED_IMGS = [
+  '/manus-storage/bed-basket_ad0f8354.png',
+  '/manus-storage/bed-cloud_3ec0a9b1.png',
+  '/manus-storage/bed-cushion_844d0e39.png',
+  '/manus-storage/bed-donut_d412fb1f.png',
+  '/manus-storage/bed-box_5e2246b7.png',
+];
 
-// ─── Pillar base ──────────────────────────────────────────────────────────────
-
-function PillarBase({ n, isBoss }: { n: number; isBoss: boolean }) {
-  return (
-    <div style={{
-      width: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 0,
-    }}>
-      {/* Wide footing */}
-      <div style={{
-        width: '110%',
-        height: 10,
-        background: isBoss
-          ? 'linear-gradient(180deg, #3A3860 0%, #2A2848 100%)'
-          : `linear-gradient(180deg, ${C.platformDark} 0%, #8A5828 100%)`,
-        borderRadius: '4px 4px 8px 8px',
-        boxShadow: isBoss ? '0 3px 8px rgba(0,0,0,0.5)' : '0 3px 6px rgba(0,0,0,0.2)',
-      }} />
-      {/* N-grab badge */}
-      <div style={{
-        marginTop: 6,
-        width: 32, height: 32,
-        background: isBoss
-          ? 'linear-gradient(180deg, #6A68A8 0%, #4A4888 100%)'
-          : `linear-gradient(180deg, ${C.plaque} 0%, ${C.plaqueDark} 100%)`,
-        borderRadius: 10,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
-        border: `1.5px solid ${isBoss ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.5)'}`,
-      }}>
-        <span style={{
-          fontFamily: 'Nunito, sans-serif',
-          fontWeight: 900,
-          fontSize: 15,
-          color: '#FFF7E1',
-          lineHeight: 1,
-          textShadow: '0 1px 2px rgba(0,0,0,0.35)',
-        }}>{n}</span>
-      </div>
-    </div>
-  );
+function getBedImg(containerIndex: number): string {
+  return BED_IMGS[containerIndex % BED_IMGS.length];
 }
 
 // ─── Tower / Container ────────────────────────────────────────────────────────
 
 function TowerContainer({
-  container, isSelected, hasChunk, onTap, isBoss, vanishHighlightIds,
+  container, containerIndex, isSelected, hasChunk, onTap, isBoss, vanishHighlightIds,
 }: {
   container: Container;
+  containerIndex: number;
   isSelected: boolean;
   hasChunk: boolean;
   onTap: (e: React.MouseEvent) => void;
@@ -151,28 +103,14 @@ function TowerContainer({
   vanishHighlightIds?: Set<string>;
 }) {
   const isEmpty = container.stack.length === 0;
-  const isFull = container.stack.length >= container.capacity;
   const canPlace = hasChunk && !container.oneWayOut;
 
-  const borderColor = isSelected
-    ? C.accent
-    : canPlace
-    ? C.peachMid
-    : isBoss
-    ? 'rgba(255,255,255,0.15)'
-    : 'rgba(200,168,136,0.4)';
+  // Cat size — fixed at 44px for up to 10 cats
+  const CAT_SIZE = 44;
+  // Invisible shaft height — tall enough for 10 cats
+  const SHAFT_H = 320;
 
-  const bgColor = isBoss
-    ? 'rgba(42,40,72,0.6)'
-    : container.frozen
-    ? 'rgba(168,200,232,0.2)'
-    : container.coatLocked
-    ? `${COAT_COLORS[container.coatLocked].body}22`
-    : 'rgba(255,243,232,0.7)';
-
-  // PILLAR_HEIGHT: fixed height for the cat shaft — cats stack from bottom up inside it
-  const PILLAR_H = 190;
-  const CAT_SIZE = 48;
+  const bedImg = getBedImg(containerIndex);
 
   return (
     <motion.div
@@ -185,10 +123,10 @@ function TowerContainer({
         alignItems: 'center',
         cursor: 'pointer',
         userSelect: 'none',
-        width: 72,
+        width: 76,
       }}
     >
-      {/* Special badges above pillar */}
+      {/* Special badges */}
       {container.frozen && (
         <div style={{ position: 'absolute', top: -18, left: 2, fontSize: 14, zIndex: 12 }}>❄️</div>
       )}
@@ -203,56 +141,49 @@ function TowerContainer({
         </div>
       )}
 
-      {/* Pillar cap */}
-      <PillarCap isBoss={isBoss} />
-
-      {/* Pillar shaft — FIXED HEIGHT */}
-      <motion.div
-        animate={
-          isSelected
-            ? { boxShadow: `0 0 0 2.5px ${C.accent}, 0 6px 24px rgba(232,116,90,0.35)` }
-            : canPlace
-            ? { boxShadow: `0 0 0 2px ${C.peachMid}` }
-            : { boxShadow: '0 2px 10px rgba(0,0,0,0.10)' }
-        }
+      {/* Invisible shaft — keeps click area + stacks cats above bed */}
+      <div
         style={{
           position: 'relative',
           width: '100%',
-          height: PILLAR_H,
-          background: bgColor,
-          border: `2px solid ${borderColor}`,
-          borderRadius: '0 0 8px 8px',
+          height: SHAFT_H,
+          // Fully transparent — no background, no border
+          background: 'transparent',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'flex-end',
           alignItems: 'center',
-          padding: '4px 4px 6px',
-          overflow: 'hidden',
+          paddingBottom: 4,
         }}
       >
-        {/* Capacity dots at top */}
-        <div style={{
-          position: 'absolute', top: 6, left: 0, right: 0,
-          display: 'flex', justifyContent: 'center', gap: 3,
-        }}>
-          {Array.from({ length: container.capacity }).map((_, i) => (
-            <div key={i} style={{
-              width: 5, height: 5, borderRadius: '50%',
-              background: i < container.stack.length
-                ? (isBoss ? 'rgba(255,255,255,0.6)' : C.brownLight)
-                : (isBoss ? 'rgba(255,255,255,0.12)' : '#E8DCC8'),
-              transition: 'background 0.2s',
-            }} />
-          ))}
-        </div>
+        {/* Selection glow ring — subtle outline around the shaft area */}
+        {(isSelected || canPlace) && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              borderRadius: 16,
+              boxShadow: isSelected
+                ? `0 0 0 2.5px ${C.accent}, 0 0 20px rgba(232,116,90,0.25)`
+                : `0 0 0 2px ${C.peachMid}`,
+              pointerEvents: 'none',
+              zIndex: 1,
+            }}
+          />
+        )}
 
-        {/* Cat stack — grows upward from bottom */}
+        {/* Cat stack — grows upward from bottom of shaft */}
         <div style={{
           display: 'flex',
           flexDirection: 'column-reverse',
           alignItems: 'center',
           width: '100%',
           gap: 0,
+          position: 'relative',
+          zIndex: 2,
         }}>
           <AnimatePresence>
             {container.stack.map((item, idx) => {
@@ -271,7 +202,7 @@ function TowerContainer({
                     : { type: 'spring', stiffness: 340, damping: 24, delay: idx * 0.015 }
                   }
                   style={{
-                    display: 'flex', justifyContent: 'center', marginBottom: -12,
+                    display: 'flex', justifyContent: 'center', marginBottom: -10,
                     filter: isVanishing
                       ? `drop-shadow(0 0 8px ${COAT_COLORS[item.coat].body}) drop-shadow(0 0 16px ${COAT_COLORS[item.coat].body})`
                       : 'none',
@@ -286,34 +217,70 @@ function TowerContainer({
           </AnimatePresence>
         </div>
 
-        {/* Empty state */}
+        {/* Empty state hint */}
         {isEmpty && (
           <div style={{
-            position: 'absolute', inset: 0, display: 'flex',
-            flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            opacity: 0.3, pointerEvents: 'none',
+            position: 'absolute',
+            bottom: 48,
+            left: 0, right: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            opacity: 0.35,
+            pointerEvents: 'none',
+            zIndex: 2,
           }}>
-            <span style={{ fontSize: 22 }}>🐾</span>
-            <span style={{
-              fontSize: 10, fontFamily: 'Caveat, cursive',
-              color: isBoss ? '#fff' : C.brownMid, marginTop: 2,
-            }}>empty</span>
+            <span style={{ fontSize: 18 }}>🐾</span>
           </div>
         )}
+      </div>
 
-        {/* Full indicator */}
-        {isFull && (
-          <div style={{
-            position: 'absolute', top: 4, right: 4,
-            width: 8, height: 8, borderRadius: '50%',
-            background: '#E85A5A',
-            boxShadow: '0 0 4px rgba(232,90,90,0.6)',
-          }} />
-        )}
-      </motion.div>
-
-      {/* Pillar base + N-badge */}
-      <PillarBase n={container.grabNumber} isBoss={isBoss} />
+      {/* Bed image at the base */}
+      <div style={{
+        position: 'relative',
+        width: 80,
+        marginTop: -6,
+        zIndex: 3,
+        filter: isSelected
+          ? `drop-shadow(0 0 6px ${C.accent})`
+          : canPlace
+          ? `drop-shadow(0 0 4px ${C.peachMid})`
+          : 'none',
+      }}>
+        <img
+          src={bedImg}
+          alt="cat bed"
+          width={80}
+          height={48}
+          style={{ objectFit: 'contain', display: 'block' }}
+          draggable={false}
+        />
+        {/* N-grab badge on the bed */}
+        <div style={{
+          position: 'absolute',
+          bottom: -4,
+          right: -4,
+          width: 22, height: 22,
+          background: isBoss
+            ? 'linear-gradient(180deg, #6A68A8 0%, #4A4888 100%)'
+            : `linear-gradient(180deg, ${C.plaque} 0%, ${C.plaqueDark} 100%)`,
+          borderRadius: 8,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+          border: `1.5px solid rgba(255,255,255,0.5)`,
+          zIndex: 4,
+        }}>
+          <span style={{
+            fontFamily: 'Nunito, sans-serif',
+            fontWeight: 900,
+            fontSize: 12,
+            color: '#FFF7E1',
+            lineHeight: 1,
+          }}>{container.grabNumber}</span>
+        </div>
+      </div>
     </motion.div>
   );
 }
@@ -1253,10 +1220,11 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, v
           gap: 14, width: '100%', maxWidth: 440,
           alignItems: 'flex-end',
         }}>
-          {state.containers.map(container => (
+          {state.containers.map((container, idx) => (
             <TowerContainer
               key={container.id}
               container={container}
+              containerIndex={idx}
               isSelected={state.selectedContainerId === container.id}
               hasChunk={hasChunk}
               onTap={(e: React.MouseEvent) => onTap(container.id, e)}
@@ -1375,8 +1343,13 @@ export default function Home() {
       const result = placeChunk(gameState, containerId);
 
       if (!result.success) {
-        const cancelled = cancelGrab(gameState);
-        setGameState({ ...cancelled, message: result.error ?? 'Cannot place here!' });
+        // For capacity errors, keep the chunk in hand so player can try another tower
+        if (result.error === 'Max capacity!') {
+          setGameState({ ...gameState, message: 'Max capacity! 🐾' });
+        } else {
+          const cancelled = cancelGrab(gameState);
+          setGameState({ ...cancelled, message: result.error ?? 'Cannot place here!' });
+        }
         return;
       }
 

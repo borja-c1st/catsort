@@ -352,7 +352,7 @@ export function placeChunk(state: GameState, targetId: string): MoveResult {
     }
   }
   if (checkTarget.capacity - checkTarget.stack.length < chunk.items.length) {
-    return { success: false, error: 'Not enough space!', vanishResults: [], vanishSteps: [], won: false, failed: false, newState: state };
+    return { success: false, error: 'Max capacity!', vanishResults: [], vanishSteps: [], won: false, failed: false, newState: state };
   }
 
   // ── Build vanishSteps for staged animation ─────────────────────────────────
@@ -485,26 +485,27 @@ export const LEVELS: LevelConfig[] = [
     triggers: [],
     containers: [
       // 3 towers: 2 filled + 1 empty buffer
-      { id: 'c1', grabNumber: 2, capacity: 6, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'ginger'] },
-      { id: 'c2', grabNumber: 2, capacity: 6, position: { x: 1, y: 0 }, startStack: ['ginger', 'tabby', 'ginger', 'white'] },
-      { id: 'c3', grabNumber: 2, capacity: 6, position: { x: 2, y: 0 }, startStack: [] },
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'ginger'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['ginger', 'tabby', 'ginger', 'white'] },
+      { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: [] },
     ],
   },
   // ── LEVEL 2 ─ grab ≤2, merge 2, 4 towers ──────────────────────────────────
   {
     id: 2, name: 'Bookshelf Nap', world: 1, levelInWorld: 2, isBoss: false,
-    description: 'Clear the tabby cats',
-    goalCoats: ['tabby'],
+    description: 'Send the tabby and white cats to their beds',
+    goalCoats: ['tabby', 'white'],
     mergeSizeK: 2,
-    budget: { type: 'moves', maxMoves: 22 },
+    budget: { type: 'moves', maxMoves: 24 },
     starThresholds: { two: 0.3, three: 0.55 },
     triggers: [],
     containers: [
       // 4 towers: 3 filled + 1 empty buffer
-      { id: 'c1', grabNumber: 2, capacity: 6, position: { x: 0, y: 0 }, startStack: ['white', 'tabby', 'ginger', 'tabby'] },
-      { id: 'c2', grabNumber: 2, capacity: 6, position: { x: 1, y: 0 }, startStack: ['tabby', 'white', 'tabby', 'ginger'] },
-      { id: 'c3', grabNumber: 2, capacity: 6, position: { x: 2, y: 0 }, startStack: ['ginger', 'tabby', 'white'] },
-      { id: 'c4', grabNumber: 2, capacity: 6, position: { x: 3, y: 0 }, startStack: [] },
+      // 4 tabby + 2 white total — all clearable with merge-2
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'tabby', 'white', 'tabby'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['tabby', 'ginger', 'tabby', 'white'] },
+      { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: ['ginger', 'ginger'] },
+      { id: 'c4', grabNumber: 2, capacity: 10, position: { x: 3, y: 0 }, startStack: [] },
     ],
   },
   // ── LEVEL 3 ─ grab ≤3, merge 3, 3 towers ──────────────────────────────────
@@ -518,9 +519,9 @@ export const LEVELS: LevelConfig[] = [
     triggers: [],
     containers: [
       // 3 towers: 2 filled + 1 empty
-      { id: 'c1', grabNumber: 3, capacity: 7, position: { x: 0, y: 0 }, startStack: ['siamese', 'calico', 'black', 'calico', 'siamese'] },
-      { id: 'c2', grabNumber: 3, capacity: 7, position: { x: 1, y: 0 }, startStack: ['calico', 'black', 'calico', 'siamese', 'calico'] },
-      { id: 'c3', grabNumber: 3, capacity: 7, position: { x: 2, y: 0 }, startStack: [] },
+      { id: 'c1', grabNumber: 3, capacity: 10, position: { x: 0, y: 0 }, startStack: ['siamese', 'calico', 'black', 'calico', 'siamese'] },
+      { id: 'c2', grabNumber: 3, capacity: 10, position: { x: 1, y: 0 }, startStack: ['calico', 'black', 'calico', 'siamese', 'calico'] },
+      { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: [] },
     ],
   },
   // ── LEVEL 4 ─ grab ≤3, merge 3, 4 towers ──────────────────────────────────
@@ -534,10 +535,10 @@ export const LEVELS: LevelConfig[] = [
     triggers: [],
     containers: [
       // 4 towers: 3 filled + 1 empty
-      { id: 'c1', grabNumber: 3, capacity: 8, position: { x: 0, y: 0 }, startStack: ['ginger', 'siamese', 'tabby', 'black', 'siamese'] },
-      { id: 'c2', grabNumber: 3, capacity: 8, position: { x: 1, y: 0 }, startStack: ['siamese', 'calico', 'black', 'siamese', 'tabby'] },
-      { id: 'c3', grabNumber: 3, capacity: 8, position: { x: 2, y: 0 }, startStack: ['tabby', 'siamese', 'calico', 'ginger'] },
-      { id: 'c4', grabNumber: 3, capacity: 8, position: { x: 3, y: 0 }, startStack: [] },
+      { id: 'c1', grabNumber: 3, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'siamese', 'tabby', 'black', 'siamese'] },
+      { id: 'c2', grabNumber: 3, capacity: 10, position: { x: 1, y: 0 }, startStack: ['siamese', 'calico', 'black', 'siamese', 'tabby'] },
+      { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: ['tabby', 'siamese', 'calico', 'ginger'] },
+      { id: 'c4', grabNumber: 3, capacity: 10, position: { x: 3, y: 0 }, startStack: [] },
     ],
   },
   // ── LEVEL 5 ─ grab ≤3, merge 3, 5 towers (boss) ───────────────────────────
@@ -557,11 +558,11 @@ export const LEVELS: LevelConfig[] = [
     ],
     containers: [
       // 5 towers: 4 filled + 1 empty
-      { id: 'c1', grabNumber: 3, capacity: 9, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'ginger', 'white', 'black'] },
-      { id: 'c2', grabNumber: 3, capacity: 9, position: { x: 1, y: 0 }, startStack: ['ginger', 'white', 'calico', 'ginger', 'tabby'] },
-      { id: 'c3', grabNumber: 3, capacity: 9, position: { x: 2, y: 0 }, startStack: ['tabby', 'white', 'ginger', 'black', 'calico'] },
-      { id: 'c4', grabNumber: 3, capacity: 9, position: { x: 3, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'black'] },
-      { id: 'c5', grabNumber: 3, capacity: 9, position: { x: 4, y: 0 }, startStack: [] },
+      { id: 'c1', grabNumber: 3, capacity: 10, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'ginger', 'white', 'black'] },
+      { id: 'c2', grabNumber: 3, capacity: 10, position: { x: 1, y: 0 }, startStack: ['ginger', 'white', 'calico', 'ginger', 'tabby'] },
+      { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: ['tabby', 'white', 'ginger', 'black', 'calico'] },
+      { id: 'c4', grabNumber: 3, capacity: 10, position: { x: 3, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'black'] },
+      { id: 'c5', grabNumber: 3, capacity: 10, position: { x: 4, y: 0 }, startStack: [] },
     ],
   },
 ];
