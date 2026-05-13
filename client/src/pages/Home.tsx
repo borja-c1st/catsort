@@ -240,20 +240,26 @@ function TowerContainer({
                     if (el) catItemRefs?.current.set(item.id, el as HTMLElement);
                     else catItemRefs?.current.delete(item.id);
                   }}
-                  initial={{ scale: 0.5, opacity: 0, y: 20 }}
+                  initial={{ scale: 0.6, opacity: 0, y: -24 }}
                   animate={isVanishing
-                    ? { scale: [1, 1.3, 0], opacity: [1, 1, 0], y: [0, -10, -10] }
+                    ? {
+                        // Hypercasual pop: quick scale-up then instant disappear
+                        scale: [1, 1.5, 1.6, 0],
+                        opacity: [1, 1, 1, 0],
+                        y: [0, -6, -8, -8],
+                        rotate: [0, (idx % 2 === 0 ? 12 : -12), 0, 0],
+                      }
                     : { scale: 1, opacity: 1, y: 0 }
                   }
-                  exit={{ scale: 0.3, opacity: 0, y: -16 }}
+                  exit={{ scale: 0.5, opacity: 0, y: -8, transition: { duration: 0.1 } }}
                   transition={isVanishing
-                    ? { duration: 0.45, ease: [0.22, 1, 0.36, 1] }
-                    : { type: 'spring', stiffness: 340, damping: 24, delay: idx * 0.015 }
+                    ? { duration: 0.63, ease: [0.22, 1, 0.36, 1], times: [0, 0.35, 0.6, 1] }
+                    : { type: 'spring', stiffness: 1400, damping: 50, delay: idx * 0.003 }
                   }
                   style={{
                     display: 'flex', justifyContent: 'center', marginBottom: -10,
                     filter: isVanishing
-                      ? `drop-shadow(0 0 10px ${COAT_COLORS[item.coat].body}) brightness(1.3)`
+                      ? `drop-shadow(0 0 14px ${COAT_COLORS[item.coat].body}) drop-shadow(0 0 6px #fff) brightness(1.5)`
                       : 'none',
                     zIndex: isVanishing ? 5 : 'auto',
                     position: 'relative',
@@ -306,29 +312,29 @@ function TowerContainer({
           style={{ objectFit: 'contain', display: 'block' }}
           draggable={false}
         />
-        {/* N-grab badge on the bed */}
+        {/* N-grab badge on the bed — chunky Supercell pill */}
         <div style={{
           position: 'absolute',
-          bottom: -4,
-          right: -4,
-          width: 22, height: 22,
+          bottom: -6,
+          right: -8,
           background: isBoss
-            ? 'linear-gradient(180deg, #6A68A8 0%, #4A4888 100%)'
-            : `linear-gradient(180deg, ${C.plaque} 0%, ${C.plaqueDark} 100%)`,
-          borderRadius: 8,
+            ? 'linear-gradient(180deg, #9B8BFF 0%, #6B5BEE 100%)'
+            : 'linear-gradient(180deg, #FFB347 0%, #FF8C00 100%)',
+          borderRadius: 999,
+          padding: '2px 8px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-          border: `1.5px solid rgba(255,255,255,0.5)`,
+          boxShadow: isBoss ? '0 3px 0 #3A30AA' : '0 3px 0 #CC6600',
+          border: '2px solid rgba(255,255,255,0.5)',
           zIndex: 4,
         }}>
           <span style={{
-            fontFamily: 'Nunito, sans-serif',
-            fontWeight: 900,
-            fontSize: 12,
-            color: '#FFF7E1',
+            fontFamily: 'Fredoka One, Nunito, sans-serif',
+            fontSize: 13,
+            color: '#FFF',
             lineHeight: 1,
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)',
           }}>{container.grabNumber}</span>
         </div>
       </div>
@@ -444,54 +450,61 @@ function SpeechBubbleLayer({ bubbles }: { bubbles: SpeechBubble[] }) {
 
 // ─── Particle layer ───────────────────────────────────────────────────────────
 
+// Hypercasual particle emojis — varied for visual richness
+const BURST_EMOJIS = ['💗', '💖', '✨', '⭐', '💛', '🧡', '💜', '💙'];
+
 function ParticleLayer({ particles }: { particles: Particle[] }) {
   return (
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 45 }}>
-      <AnimatePresence>
-        {particles.map(p => (
-          <motion.div
-            key={p.id}
-            initial={{ x: p.x, y: p.y, scale: 0.5, opacity: 0 }}
-            animate={{
-              x: p.x + p.vx * 50,
-              y: p.y + p.vy * 50,
-              scale: [0.5, 1.0, 0.7, 0],
-              opacity: [0, 1, 1, 0],
-            }}
-            exit={{ opacity: 0 }}
-            transition={{
-              duration: 1.6,
-              ease: 'easeOut',
-              opacity: { times: [0, 0.12, 0.65, 1] },
-              scale: { times: [0, 0.12, 0.6, 1] },
-            }}
-            style={{ position: 'absolute', fontSize: p.size, lineHeight: 1 }}
-          >
-            {'💗'}
-          </motion.div>
-        ))}
-      </AnimatePresence>
+      {particles.map(p => (
+        <motion.div
+          key={p.id}
+          initial={{ x: p.x, y: p.y, scale: 0, opacity: 1, rotate: 0 }}
+          animate={{
+            x: p.x + p.vx * 40,
+            y: p.y + p.vy * 40,
+            scale: [0, 0.8, 0.65, 0],
+            opacity: [1, 1, 0.8, 0],
+            rotate: p.vx > 0 ? 180 : -180,
+          }}
+          transition={{
+            duration: 1.0,
+            ease: [0.22, 1, 0.36, 1],
+            scale: { times: [0, 0.15, 0.5, 1] },
+            opacity: { times: [0, 0.2, 0.65, 1] },
+          }}
+          style={{
+            position: 'absolute',
+            fontSize: p.size,
+            lineHeight: 1,
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
+          }}
+        >
+          {BURST_EMOJIS[Math.floor(p.size) % BURST_EMOJIS.length]}
+        </motion.div>
+      ))}
     </div>
   );
 }
 
 /**
- * Spawn hearts that drift gently upward from the cat position.
- * x/y should be the screen-space centre of the vanishing cats.
+ * Hypercasual burst: full 360° explosion from the cat midpoint.
+ * Fast, punchy, varied sizes — like a mobile merge game pop.
  */
 function spawnParticles(x: number, y: number, count: number): Particle[] {
   return Array.from({ length: count }, (_, i) => {
-    // Mostly upward arc with gentle horizontal spread
-    const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.2;
-    const speed = 0.4 + Math.random() * 0.9;
+    // Full 360° spread with varied speed — inner ring fast, outer ring slower
+    const angle = (i / count) * Math.PI * 2 + Math.random() * 0.6;
+    const speed = 1.0 + Math.random() * 1.2;
+    const sizeVal = 8 + Math.floor(Math.random() * 7); // 8–14px (50% smaller)
     return {
       id: `p${Date.now()}${i}`,
-      x: x + (Math.random() - 0.5) * 28,
-      y: y + (Math.random() - 0.5) * 18,
+      x: x + (Math.random() - 0.5) * 16,
+      y: y + (Math.random() - 0.5) * 16,
       type: 'heart' as const,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
-      size: 12 + Math.random() * 10,
+      size: sizeVal,
     };
   });
 }
@@ -501,136 +514,201 @@ function makeBubble(text: string, x: number, y: number): SpeechBubble {
 }
 
 // ─── HUD ──────────────────────────────────────────────────────────────────────
+// King/Supercell style: currency bar on top, level badge, goal cats, moves pill
+
+function CurrencyBar({ isBoss }: { isBoss: boolean }) {
+  const bg = isBoss
+    ? 'linear-gradient(180deg, #2A2650 0%, #1A1830 100%)'
+    : 'linear-gradient(180deg, #FF9EBC 0%, #FF7AA8 100%)';
+  return (
+    <div style={{
+      width: '100%',
+      background: bg,
+      padding: '6px 14px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      gap: 8,
+      flexShrink: 0,
+      boxShadow: '0 2px 0px rgba(0,0,0,0.15)',
+    }}>
+      {/* Coins */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 4,
+        background: 'rgba(0,0,0,0.2)', borderRadius: 999,
+        padding: '3px 10px 3px 4px',
+        border: '1.5px solid rgba(255,255,255,0.25)',
+      }}>
+        <span style={{ fontSize: 16 }}>🪙</span>
+        <span style={{ fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 14, color: '#FFF', letterSpacing: 0.5 }}>1,240</span>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginLeft: 2 }}>+</span>
+      </div>
+      {/* Gems */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 4,
+        background: 'rgba(0,0,0,0.2)', borderRadius: 999,
+        padding: '3px 10px 3px 4px',
+        border: '1.5px solid rgba(255,255,255,0.25)',
+      }}>
+        <span style={{ fontSize: 16 }}>💎</span>
+        <span style={{ fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 14, color: '#FFF', letterSpacing: 0.5 }}>48</span>
+        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginLeft: 2 }}>+</span>
+      </div>
+      {/* Lives */}
+      <div style={{
+        display: 'flex', alignItems: 'center', gap: 4,
+        background: 'rgba(0,0,0,0.2)', borderRadius: 999,
+        padding: '3px 10px 3px 4px',
+        border: '1.5px solid rgba(255,255,255,0.25)',
+      }}>
+        <span style={{ fontSize: 16 }}>❤️</span>
+        <span style={{ fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 14, color: '#FFF', letterSpacing: 0.5 }}>5</span>
+      </div>
+    </div>
+  );
+}
 
 function HUD({ state, onPause, isBoss }: { state: GameState; onPause: () => void; isBoss: boolean }) {
   const cfg = state.levelConfig!;
   const goalEntries = Object.entries(state.goalProgress) as [CoatId, { cleared: number; total: number }][];
-  const textColor = isBoss ? '#E8E0F0' : C.brown;
-  const subColor = isBoss ? 'rgba(232,224,240,0.6)' : C.brownMid;
+  const isLow = state.budget.movesLeft <= 5;
+
   const hudBg = isBoss
-    ? 'rgba(26,24,48,0.95)'
-    : 'rgba(255,243,232,0.97)';
-  const hudBorder = isBoss ? 'rgba(255,255,255,0.1)' : C.peachMid;
+    ? 'linear-gradient(180deg, #1E1C3A 0%, #2A2848 100%)'
+    : 'linear-gradient(180deg, #FFF0FA 0%, #FFE4F4 100%)';
+  const textColor = isBoss ? '#F0EAFF' : '#3A2A25';
+  const subColor = isBoss ? 'rgba(240,234,255,0.55)' : '#9A7A88';
 
   return (
     <div style={{
       width: '100%',
       background: hudBg,
-      borderBottom: `1.5px solid ${hudBorder}`,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-      padding: '8px 14px',
+      padding: '8px 14px 10px',
       display: 'flex',
       flexDirection: 'column',
-      gap: 6,
+      gap: 8,
+      flexShrink: 0,
+      boxShadow: '0 3px 0px rgba(0,0,0,0.12)',
     }}>
-      {/* Top row: pause | world+level | settings */}
+      {/* Row 1: pause | level badge | settings */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button
+        <motion.button
+          whileTap={{ scale: 0.9 }}
           onClick={onPause}
           style={{
-            width: 32, height: 32, borderRadius: '50%',
-            background: isBoss ? 'rgba(255,255,255,0.1)' : C.peach,
-            border: `1.5px solid ${hudBorder}`,
+            width: 36, height: 36, borderRadius: 999,
+            background: isBoss ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.7)',
+            border: 'none',
+            boxShadow: '0 3px 0 rgba(0,0,0,0.15)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 14, cursor: 'pointer',
+            fontSize: 16, cursor: 'pointer',
           }}
-        >⏸</button>
-        <div style={{
-          fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 13,
-          color: isBoss ? C.butter : C.brownMid, letterSpacing: 1,
-          textAlign: 'center',
-        }}>
-          {isBoss ? '★ BOSS · ' : `WORLD ${cfg.world} · `}LEVEL {cfg.id}
-        </div>
-        <div style={{ width: 32 }} />
-      </div>
+        >⏸</motion.button>
 
-      {/* Goal strip */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        background: isBoss ? 'rgba(255,255,255,0.06)' : C.peach,
-        borderRadius: 12, padding: '5px 10px',
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: subColor, fontFamily: 'Nunito, sans-serif', letterSpacing: 0.8 }}>
-            GOAL · MERGE &#123; K = {cfg.mergeSizeK} &#125;
-          </div>
-          <div style={{ fontSize: 13, fontFamily: 'Caveat, cursive', color: textColor, marginTop: 1 }}>
-            {cfg.description}
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-          {goalEntries.map(([coat, prog]) => (
-            <div key={coat} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <CatImg coat={coat} size={28} />
-              <div style={{
-                fontSize: 11, fontWeight: 800, fontFamily: 'Nunito, sans-serif',
-                color: prog.cleared >= prog.total ? C.sage : textColor,
-              }}>
-                {prog.cleared}/{prog.total}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Stats row */}
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        {/* Moves */}
+        {/* Level badge — King style pill */}
         <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', gap: 5,
-          background: isBoss ? 'rgba(255,255,255,0.06)' : C.cream,
-          borderRadius: 10, padding: '4px 8px',
-          border: state.budget.movesLeft <= 5 ? `1.5px solid ${C.accent}` : `1.5px solid ${hudBorder}`,
+          background: isBoss
+            ? 'linear-gradient(180deg, #7B68EE 0%, #5A4FCC 100%)'
+            : 'linear-gradient(180deg, #FF9EBC 0%, #E8607A 100%)',
+          borderRadius: 999,
+          padding: '4px 20px',
+          boxShadow: isBoss ? '0 4px 0 #3A30AA' : '0 4px 0 #B83050',
+          border: '2px solid rgba(255,255,255,0.4)',
         }}>
-          <span style={{ fontSize: 14 }}>🐾</span>
           <span style={{
-            fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 18,
-            color: state.budget.movesLeft <= 5 ? C.accent : textColor,
-          }}>{state.budget.movesLeft}</span>
-          <span style={{ fontSize: 10, color: subColor, fontFamily: 'Nunito, sans-serif' }}>moves</span>
-        </div>
-        {/* Chain */}
-        <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', gap: 5,
-          background: isBoss ? 'rgba(255,255,255,0.06)' : C.cream,
-          borderRadius: 10, padding: '4px 8px',
-          border: `1.5px solid ${hudBorder}`,
-        }}>
-          <span style={{ fontSize: 14 }}>⏱</span>
-          <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 18, color: textColor }}>
-            ×{state.chainLength}
+            fontFamily: 'Fredoka One, Nunito, sans-serif',
+            fontSize: 16, color: '#FFF',
+            letterSpacing: 0.5,
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+          }}>
+            {isBoss ? '⭐ BOSS' : `Level ${cfg.id}`}
           </span>
-          <span style={{ fontSize: 10, color: subColor, fontFamily: 'Nunito, sans-serif' }}>chain</span>
         </div>
-        {/* Score */}
+
+        {/* Score pill */}
         <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', gap: 5,
-          background: isBoss ? 'rgba(255,255,255,0.06)' : C.cream,
-          borderRadius: 10, padding: '4px 8px',
-          border: `1.5px solid ${hudBorder}`,
+          display: 'flex', alignItems: 'center', gap: 4,
+          background: isBoss ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.7)',
+          borderRadius: 999, padding: '4px 10px',
+          boxShadow: '0 2px 0 rgba(0,0,0,0.1)',
         }}>
-          <span style={{ fontSize: 14 }}>⭐</span>
-          <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 15, color: textColor }}>
+          <span style={{ fontSize: 13 }}>⭐</span>
+          <span style={{ fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 13, color: textColor }}>
             {state.score.toLocaleString()}
           </span>
         </div>
       </div>
 
-      {/* Boss spawn trigger notice */}
-      {isBoss && (
-        <div style={{
-          fontSize: 10, fontFamily: 'Nunito, sans-serif', fontWeight: 700,
-          color: 'rgba(244,220,120,0.9)', textAlign: 'center', letterSpacing: 0.8,
-        }}>
-          SPAWN TRIGGER · EVERY 3 MOVES
+      {/* Row 2: goal cats + moves counter */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        {/* Goal cats */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+          {goalEntries.map(([coat, prog]) => {
+            const done = prog.cleared >= prog.total;
+            return (
+              <div key={coat} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
+                background: done
+                  ? 'rgba(100,200,100,0.25)'
+                  : isBoss ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)',
+                borderRadius: 16, padding: '4px 8px',
+                border: done ? '2px solid #6CC86C' : '2px solid rgba(255,255,255,0.5)',
+                boxShadow: done ? '0 2px 0 #4A9A4A' : '0 2px 0 rgba(0,0,0,0.08)',
+                opacity: done ? 0.7 : 1,
+                position: 'relative',
+              }}>
+                {done && (
+                  <div style={{
+                    position: 'absolute', top: -6, right: -6,
+                    width: 16, height: 16, borderRadius: 999,
+                    background: '#6CC86C', border: '2px solid #FFF',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 9, color: '#FFF', fontWeight: 900,
+                  }}>✓</div>
+                )}
+                <CatImg coat={coat} size={30} />
+                <span style={{
+                  fontFamily: 'Fredoka One, Nunito, sans-serif',
+                  fontSize: 12, color: done ? '#4A9A4A' : textColor,
+                  lineHeight: 1,
+                }}>{prog.cleared}/{prog.total}</span>
+              </div>
+            );
+          })}
         </div>
-      )}
+
+        {/* Moves counter — big chunky pill */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          background: isLow
+            ? 'linear-gradient(180deg, #FF6B6B 0%, #E84040 100%)'
+            : isBoss
+            ? 'linear-gradient(180deg, #7B68EE 0%, #5A4FCC 100%)'
+            : 'linear-gradient(180deg, #FFB347 0%, #FF8C00 100%)',
+          borderRadius: 20,
+          padding: '6px 16px',
+          minWidth: 64,
+          boxShadow: isLow ? '0 4px 0 #A02020' : isBoss ? '0 4px 0 #3A30AA' : '0 4px 0 #CC6600',
+          border: '2px solid rgba(255,255,255,0.4)',
+          flexShrink: 0,
+        }}>
+          <span style={{
+            fontFamily: 'Fredoka One, Nunito, sans-serif',
+            fontSize: 28, color: '#FFF', lineHeight: 1,
+            textShadow: '0 2px 4px rgba(0,0,0,0.25)',
+          }}>{state.budget.movesLeft}</span>
+          <span style={{
+            fontFamily: 'Nunito, sans-serif', fontWeight: 700,
+            fontSize: 10, color: 'rgba(255,255,255,0.85)', letterSpacing: 0.5,
+          }}>MOVES</span>
+        </div>
+      </div>
     </div>
   );
 }
 
 // ─── Booster bar ──────────────────────────────────────────────────────────────
+// Supercell/King style: 3 chunky gradient booster buttons with gem cost badges
 
 function BoosterBar({
   onUndo, onAddMoves, onSoloGrab, onColorBomb, hasChunk, isBoss, undoAvailable,
@@ -643,33 +721,55 @@ function BoosterBar({
   isBoss: boolean;
   undoAvailable: boolean;
 }) {
-  const bg = isBoss ? 'rgba(26,24,48,0.97)' : 'rgba(255,243,232,0.97)';
-  const border = isBoss ? 'rgba(255,255,255,0.1)' : C.peachMid;
-  const btnBg = isBoss ? 'rgba(255,255,255,0.08)' : C.cream;
-  const btnBorder = isBoss ? 'rgba(255,255,255,0.15)' : C.peachMid;
-  const textColor = isBoss ? '#E8E0F0' : C.brown;
+  const bg = isBoss
+    ? 'linear-gradient(180deg, #1E1C3A 0%, #2A2848 100%)'
+    : 'linear-gradient(180deg, #FFF0FA 0%, #FFE4F4 100%)';
 
+  // 3 main boosters (King-style: each has a distinct color)
   const boosters = [
-    { icon: '↶', label: 'Undo', onClick: onUndo, disabled: !undoAvailable || hasChunk },
-    { icon: '🐾', label: '+5 moves', onClick: onAddMoves, disabled: false },
-    { icon: '☝︎', label: 'Solo grab', onClick: onSoloGrab, disabled: hasChunk },
-    { icon: '💣', label: 'Color bomb', onClick: onColorBomb, disabled: hasChunk },
+    {
+      icon: '↩️',
+      label: 'Undo',
+      cost: '💎 1',
+      gradient: 'linear-gradient(180deg, #74B9FF 0%, #4A90E2 100%)',
+      shadow: '#2A60B0',
+      onClick: onUndo,
+      disabled: !undoAvailable || hasChunk,
+    },
+    {
+      icon: '🐾',
+      label: '+5 Moves',
+      cost: '💎 3',
+      gradient: 'linear-gradient(180deg, #55EFC4 0%, #00B894 100%)',
+      shadow: '#007A60',
+      onClick: onAddMoves,
+      disabled: false,
+    },
+    {
+      icon: '💣',
+      label: 'Bomb',
+      cost: '💎 5',
+      gradient: 'linear-gradient(180deg, #FD79A8 0%, #E84393 100%)',
+      shadow: '#A02060',
+      onClick: onColorBomb,
+      disabled: hasChunk,
+    },
   ];
 
   return (
     <div style={{
       width: '100%',
       background: bg,
-      borderTop: `1.5px solid ${border}`,
-      padding: '8px 12px max(10px, env(safe-area-inset-bottom, 10px))',
+      padding: '10px 16px max(12px, env(safe-area-inset-bottom, 12px))',
       display: 'flex',
-      gap: 8,
+      gap: 12,
       flexShrink: 0,
+      boxShadow: '0 -3px 0 rgba(0,0,0,0.08)',
     }}>
       {boosters.map(b => (
         <motion.button
           key={b.label}
-          whileTap={{ scale: 0.93 }}
+          whileTap={{ scale: 0.9 }}
           onClick={b.onClick}
           disabled={b.disabled}
           style={{
@@ -677,43 +777,61 @@ function BoosterBar({
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: 2,
-            background: btnBg,
-            border: `1.5px solid ${btnBorder}`,
-            borderRadius: 14,
-            padding: '6px 4px',
+            gap: 3,
+            background: b.gradient,
+            border: '2.5px solid rgba(255,255,255,0.45)',
+            borderRadius: 20,
+            padding: '10px 4px 8px',
             cursor: b.disabled ? 'not-allowed' : 'pointer',
-            opacity: b.disabled ? 0.4 : 1,
+            opacity: b.disabled ? 0.45 : 1,
+            boxShadow: b.disabled ? 'none' : `0 5px 0 ${b.shadow}, 0 6px 16px rgba(0,0,0,0.15)`,
+            position: 'relative',
           }}
         >
-          <span style={{ fontSize: 18 }}>{b.icon}</span>
+          <span style={{ fontSize: 24, lineHeight: 1 }}>{b.icon}</span>
           <span style={{
-            fontSize: 9, fontFamily: 'Nunito, sans-serif', fontWeight: 700,
-            color: textColor, textAlign: 'center', lineHeight: 1.2,
+            fontSize: 10, fontFamily: 'Fredoka One, Nunito, sans-serif',
+            color: '#FFF', textAlign: 'center', lineHeight: 1.1,
+            textShadow: '0 1px 2px rgba(0,0,0,0.3)',
           }}>{b.label}</span>
+          {/* Cost badge */}
+          <div style={{
+            position: 'absolute', bottom: -8,
+            background: 'rgba(0,0,0,0.55)',
+            borderRadius: 999, padding: '2px 7px',
+            border: '1.5px solid rgba(255,255,255,0.3)',
+          }}>
+            <span style={{ fontSize: 9, color: '#FFF', fontFamily: 'Nunito, sans-serif', fontWeight: 700 }}>{b.cost}</span>
+          </div>
         </motion.button>
       ))}
+
+      {/* Cancel pill — shown when chunk is held */}
       {hasChunk && (
         <motion.button
-          whileTap={{ scale: 0.93 }}
-          onClick={() => {}} // cancel handled by game logic
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0, opacity: 0 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => {}}
           style={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            gap: 2,
-            background: `${C.accent}22`,
-            border: `1.5px solid ${C.accent}`,
-            borderRadius: 14,
-            padding: '6px 4px',
+            gap: 3,
+            background: 'linear-gradient(180deg, #FF7675 0%, #D63031 100%)',
+            border: '2.5px solid rgba(255,255,255,0.45)',
+            borderRadius: 20,
+            padding: '10px 4px 8px',
             cursor: 'pointer',
+            boxShadow: '0 5px 0 #8A1010, 0 6px 16px rgba(0,0,0,0.15)',
           }}
         >
-          <span style={{ fontSize: 18 }}>✕</span>
+          <span style={{ fontSize: 24, lineHeight: 1 }}>✕</span>
           <span style={{
-            fontSize: 9, fontFamily: 'Nunito, sans-serif', fontWeight: 700,
-            color: C.accent, textAlign: 'center',
+            fontSize: 10, fontFamily: 'Fredoka One, Nunito, sans-serif',
+            color: '#FFF', textShadow: '0 1px 2px rgba(0,0,0,0.3)',
           }}>Cancel</span>
         </motion.button>
       )}
@@ -798,104 +916,112 @@ function LevelCompleteOverlay({ state, onNext, onReplay, onMenu }: {
       animate={{ opacity: 1 }}
       style={{
         position: 'fixed', inset: 0, zIndex: 70,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(255,230,219,0.88)', backdropFilter: 'blur(6px)',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        background: 'rgba(80,40,100,0.55)', backdropFilter: 'blur(8px)',
       }}
     >
       <motion.div
-        initial={{ scale: 0.8, y: 40 }}
-        animate={{ scale: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 28 }}
         style={{
-          width: 300, borderRadius: 28,
-          background: C.cream,
-          border: `2px solid ${C.peachMid}`,
-          boxShadow: '0 8px 40px rgba(232,116,90,0.25)',
-          padding: '28px 24px',
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+          width: '100%', maxWidth: 480,
+          borderRadius: '32px 32px 0 0',
+          background: 'linear-gradient(180deg, #FFF0FA 0%, #FFE4F4 100%)',
+          boxShadow: '0 -8px 40px rgba(232,96,122,0.3)',
+          padding: '28px 24px max(28px, env(safe-area-inset-bottom, 28px))',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
         }}
       >
-        {/* Cat parade */}
-        <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
-          {(['ginger', 'white', 'tabby'] as CoatId[]).map(c => (
-            <motion.div
-              key={c}
-              animate={{ y: [0, -6, 0] }}
-              transition={{ repeat: Infinity, duration: 0.8, delay: ['ginger','white','tabby'].indexOf(c) * 0.2 }}
-            >
-              <CatImg coat={c} size={44} />
-            </motion.div>
-          ))}
-        </div>
-
-        <div style={{ fontFamily: 'Caveat, cursive', fontSize: 36, color: C.brown, textAlign: 'center', lineHeight: 1.1 }}>
-          Naptime!
-        </div>
-        <div style={{ fontSize: 12, color: C.brownMid, fontFamily: 'Nunito, sans-serif', textAlign: 'center' }}>
-          All {state.levelConfig?.goalCoats.map(c => COAT_COLORS[c].label).join(' & ')} kittens are home and purring.
-        </div>
-
-        {/* Stars */}
-        <div style={{ display: 'flex', gap: 8 }}>
+        {/* Stars — big King-style */}
+        <div style={{ display: 'flex', gap: 4, alignItems: 'flex-end', marginTop: -48 }}>
           {[1, 2, 3].map(s => (
             <motion.div
               key={s}
-              initial={{ scale: 0, rotate: -30 }}
-              animate={{ scale: state.stars >= s ? 1.15 : 0.7, rotate: 0 }}
-              transition={{ delay: s * 0.18, type: 'spring' }}
-              style={{ fontSize: 36, opacity: state.stars >= s ? 1 : 0.2 }}
+              initial={{ scale: 0, rotate: s === 2 ? -20 : s === 1 ? -35 : 35, y: 20 }}
+              animate={{
+                scale: state.stars >= s ? (s === 2 ? 1.25 : 1.0) : 0.65,
+                rotate: s === 2 ? 0 : s === 1 ? -12 : 12,
+                y: s === 2 ? -8 : 0,
+              }}
+              transition={{ delay: s * 0.15, type: 'spring', stiffness: 300 }}
+              style={{
+                fontSize: s === 2 ? 64 : 52,
+                opacity: state.stars >= s ? 1 : 0.2,
+                filter: state.stars >= s ? 'drop-shadow(0 4px 8px rgba(255,200,0,0.6))' : 'none',
+              }}
             >⭐</motion.div>
           ))}
         </div>
 
-        {/* Stats */}
+        <div style={{
+          fontFamily: 'Fredoka One, Nunito, sans-serif',
+          fontSize: 38, color: '#E8607A',
+          textShadow: '0 3px 0 #B83050',
+          letterSpacing: 1,
+        }}>Level Clear!</div>
+
+        {/* Cat parade */}
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+          {(['ginger', 'white', 'tabby'] as CoatId[]).map((c, i) => (
+            <motion.div
+              key={c}
+              animate={{ y: [0, -8, 0] }}
+              transition={{ repeat: Infinity, duration: 0.7, delay: i * 0.18 }}
+            >
+              <CatImg coat={c} size={48} />
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Stats row */}
         <div style={{
           width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr',
           gap: 8, textAlign: 'center',
         }}>
           {[
-            { label: 'Score', value: state.score.toLocaleString() },
-            { label: 'Moves left', value: `${state.budget.movesLeft} / ${state.levelConfig?.budget.maxMoves}` },
-            { label: 'Best chain', value: `×${state.bestChain}` },
+            { icon: '⭐', label: 'Score', value: state.score.toLocaleString() },
+            { icon: '🐾', label: 'Moves Left', value: `${state.budget.movesLeft}` },
+            { icon: '⚡', label: 'Best Chain', value: `×${state.bestChain}` },
           ].map(s => (
             <div key={s.label} style={{
-              background: C.peach, borderRadius: 12, padding: '6px 4px',
+              background: 'rgba(255,255,255,0.7)',
+              borderRadius: 20, padding: '8px 4px',
+              border: '2px solid rgba(255,255,255,0.9)',
+              boxShadow: '0 3px 0 rgba(200,100,120,0.15)',
             }}>
-              <div style={{ fontSize: 16, fontWeight: 900, fontFamily: 'Nunito, sans-serif', color: C.brown }}>{s.value}</div>
-              <div style={{ fontSize: 9, color: C.brownMid, fontFamily: 'Nunito, sans-serif' }}>{s.label}</div>
+              <div style={{ fontSize: 18 }}>{s.icon}</div>
+              <div style={{ fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 18, color: '#3A2A25' }}>{s.value}</div>
+              <div style={{ fontSize: 9, color: '#9A7A88', fontFamily: 'Nunito, sans-serif', fontWeight: 700 }}>{s.label}</div>
             </div>
           ))}
         </div>
 
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
           {hasNext && (
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              onClick={onNext}
-              style={{
-                width: '100%', padding: '13px', borderRadius: 20,
-                background: `linear-gradient(135deg, ${C.accent}, #C85040)`,
-                color: '#fff', fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 16,
-                border: 'none', cursor: 'pointer',
-                boxShadow: `0 4px 16px rgba(232,116,90,0.4)`,
-              }}
-            >
-              Next level →
-            </motion.button>
+            <motion.button whileTap={{ scale: 0.94 }} onClick={onNext} style={{
+              width: '100%', padding: '16px', borderRadius: 999,
+              background: 'linear-gradient(180deg, #FF9EBC 0%, #E8607A 100%)',
+              color: '#fff', fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 20,
+              border: '3px solid rgba(255,255,255,0.5)', cursor: 'pointer',
+              boxShadow: '0 6px 0 #B83050, 0 8px 20px rgba(232,96,122,0.35)',
+            }}>Next Level →</motion.button>
           )}
-          <div style={{ display: 'flex', gap: 8 }}>
-            <motion.button whileTap={{ scale: 0.96 }} onClick={onReplay} style={{
-              flex: 1, padding: '10px', borderRadius: 16,
-              background: C.peach, color: C.brownMid,
-              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13,
-              border: `1.5px solid ${C.peachMid}`, cursor: 'pointer',
+          <div style={{ display: 'flex', gap: 10 }}>
+            <motion.button whileTap={{ scale: 0.94 }} onClick={onReplay} style={{
+              flex: 1, padding: '12px', borderRadius: 999,
+              background: 'linear-gradient(180deg, #74B9FF 0%, #4A90E2 100%)',
+              color: '#fff', fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 16,
+              border: '3px solid rgba(255,255,255,0.5)', cursor: 'pointer',
+              boxShadow: '0 5px 0 #2A60B0',
             }}>Replay</motion.button>
-            <motion.button whileTap={{ scale: 0.96 }} onClick={onMenu} style={{
-              flex: 1, padding: '10px', borderRadius: 16,
-              background: C.peach, color: C.brownMid,
-              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13,
-              border: `1.5px solid ${C.peachMid}`, cursor: 'pointer',
-            }}>World Map</motion.button>
+            <motion.button whileTap={{ scale: 0.94 }} onClick={onMenu} style={{
+              flex: 1, padding: '12px', borderRadius: 999,
+              background: 'linear-gradient(180deg, #A29BFE 0%, #6C5CE7 100%)',
+              color: '#fff', fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 16,
+              border: '3px solid rgba(255,255,255,0.5)', cursor: 'pointer',
+              boxShadow: '0 5px 0 #4A3AB0',
+            }}>Map</motion.button>
           </div>
         </div>
       </motion.div>
@@ -912,40 +1038,50 @@ function LevelFailOverlay({ onReplay, onMenu }: { onReplay: () => void; onMenu: 
       animate={{ opacity: 1 }}
       style={{
         position: 'fixed', inset: 0, zIndex: 70,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: 'rgba(200,140,120,0.75)', backdropFilter: 'blur(6px)',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        background: 'rgba(60,20,40,0.6)', backdropFilter: 'blur(8px)',
       }}
     >
       <motion.div
-        initial={{ scale: 0.8, y: 40 }}
-        animate={{ scale: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 28 }}
         style={{
-          width: 280, borderRadius: 28,
-          background: C.cream,
-          border: `2px solid ${C.peachMid}`,
-          boxShadow: '0 8px 32px rgba(200,100,80,0.2)',
-          padding: '28px 24px',
+          width: '100%', maxWidth: 480,
+          borderRadius: '32px 32px 0 0',
+          background: 'linear-gradient(180deg, #FFF0FA 0%, #FFE4F4 100%)',
+          boxShadow: '0 -8px 40px rgba(200,60,80,0.3)',
+          padding: '28px 24px max(28px, env(safe-area-inset-bottom, 28px))',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
         }}
       >
-        <div style={{ fontSize: 56 }}>😿</div>
-        <div style={{ fontFamily: 'Caveat, cursive', fontSize: 30, color: C.brown }}>Out of moves!</div>
-        <div style={{ fontSize: 12, color: C.brownMid, fontFamily: 'Nunito, sans-serif', textAlign: 'center' }}>
-          The kittens are still mixed up... try again!
+        <motion.div
+          animate={{ rotate: [-5, 5, -5, 5, 0] }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          style={{ fontSize: 64 }}
+        >😿</motion.div>
+        <div style={{
+          fontFamily: 'Fredoka One, Nunito, sans-serif',
+          fontSize: 34, color: '#E84040',
+          textShadow: '0 3px 0 #A02020',
+        }}>Out of Moves!</div>
+        <div style={{ fontSize: 13, color: '#9A7A88', fontFamily: 'Nunito, sans-serif', fontWeight: 700, textAlign: 'center' }}>
+          The kittens are still mixed up...
         </div>
-        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <motion.button whileTap={{ scale: 0.96 }} onClick={onReplay} style={{
-            width: '100%', padding: '13px', borderRadius: 20,
-            background: `linear-gradient(135deg, ${C.accent}, #C85040)`,
-            color: '#fff', fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 16,
-            border: 'none', cursor: 'pointer',
-          }}>Try Again</motion.button>
-          <motion.button whileTap={{ scale: 0.96 }} onClick={onMenu} style={{
-            width: '100%', padding: '10px', borderRadius: 16,
-            background: C.peach, color: C.brownMid,
-            fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13,
-            border: `1.5px solid ${C.peachMid}`, cursor: 'pointer',
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <motion.button whileTap={{ scale: 0.94 }} onClick={onReplay} style={{
+            width: '100%', padding: '16px', borderRadius: 999,
+            background: 'linear-gradient(180deg, #FF7675 0%, #D63031 100%)',
+            color: '#fff', fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 20,
+            border: '3px solid rgba(255,255,255,0.5)', cursor: 'pointer',
+            boxShadow: '0 6px 0 #8A1010, 0 8px 20px rgba(214,48,49,0.35)',
+          }}>Try Again!</motion.button>
+          <motion.button whileTap={{ scale: 0.94 }} onClick={onMenu} style={{
+            width: '100%', padding: '12px', borderRadius: 999,
+            background: 'linear-gradient(180deg, #A29BFE 0%, #6C5CE7 100%)',
+            color: '#fff', fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 16,
+            border: '3px solid rgba(255,255,255,0.5)', cursor: 'pointer',
+            boxShadow: '0 5px 0 #4A3AB0',
           }}>World Map</motion.button>
         </div>
       </motion.div>
@@ -962,37 +1098,46 @@ function PauseOverlay({ onResume, onMenu, isBoss }: { onResume: () => void; onMe
       animate={{ opacity: 1 }}
       style={{
         position: 'fixed', inset: 0, zIndex: 70,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: isBoss ? 'rgba(10,8,30,0.85)' : 'rgba(255,230,219,0.85)',
-        backdropFilter: 'blur(6px)',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        background: isBoss ? 'rgba(10,8,30,0.8)' : 'rgba(80,40,100,0.55)',
+        backdropFilter: 'blur(8px)',
       }}
     >
       <motion.div
-        initial={{ scale: 0.9 }}
-        animate={{ scale: 1 }}
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 28 }}
         style={{
-          width: 260, borderRadius: 28,
-          background: isBoss ? C.bossNavy : C.cream,
-          border: `2px solid ${isBoss ? 'rgba(255,255,255,0.15)' : C.peachMid}`,
-          padding: '28px 24px',
+          width: '100%', maxWidth: 480,
+          borderRadius: '32px 32px 0 0',
+          background: isBoss
+            ? 'linear-gradient(180deg, #2A2848 0%, #1A1630 100%)'
+            : 'linear-gradient(180deg, #FFF0FA 0%, #FFE4F4 100%)',
+          boxShadow: '0 -8px 40px rgba(0,0,0,0.25)',
+          padding: '28px 24px max(28px, env(safe-area-inset-bottom, 28px))',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
         }}
       >
-        <div style={{ fontSize: 44 }}>⏸</div>
-        <div style={{ fontFamily: 'Caveat, cursive', fontSize: 30, color: isBoss ? '#E8E0F0' : C.brown }}>Paused</div>
-        <motion.button whileTap={{ scale: 0.96 }} onClick={onResume} style={{
-          width: '100%', padding: '13px', borderRadius: 20,
-          background: `linear-gradient(135deg, ${C.accent}, #C85040)`,
-          color: '#fff', fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 16,
-          border: 'none', cursor: 'pointer',
+        <div style={{ fontSize: 52 }}>⏸️</div>
+        <div style={{
+          fontFamily: 'Fredoka One, Nunito, sans-serif',
+          fontSize: 36,
+          color: isBoss ? '#F0EAFF' : '#E8607A',
+          textShadow: isBoss ? '0 3px 0 #3A30AA' : '0 3px 0 #B83050',
+        }}>Paused</div>
+        <motion.button whileTap={{ scale: 0.94 }} onClick={onResume} style={{
+          width: '100%', padding: '16px', borderRadius: 999,
+          background: 'linear-gradient(180deg, #55EFC4 0%, #00B894 100%)',
+          color: '#fff', fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 20,
+          border: '3px solid rgba(255,255,255,0.5)', cursor: 'pointer',
+          boxShadow: '0 6px 0 #007A60, 0 8px 20px rgba(0,184,148,0.35)',
         }}>Resume</motion.button>
-        <motion.button whileTap={{ scale: 0.96 }} onClick={onMenu} style={{
-          width: '100%', padding: '10px', borderRadius: 16,
-          background: isBoss ? 'rgba(255,255,255,0.08)' : C.peach,
-          color: isBoss ? '#E8E0F0' : C.brownMid,
-          fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 13,
-          border: `1.5px solid ${isBoss ? 'rgba(255,255,255,0.15)' : C.peachMid}`,
-          cursor: 'pointer',
+        <motion.button whileTap={{ scale: 0.94 }} onClick={onMenu} style={{
+          width: '100%', padding: '12px', borderRadius: 999,
+          background: 'linear-gradient(180deg, #A29BFE 0%, #6C5CE7 100%)',
+          color: '#fff', fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 16,
+          border: '3px solid rgba(255,255,255,0.5)', cursor: 'pointer',
+          boxShadow: '0 5px 0 #4A3AB0',
         }}>World Map</motion.button>
       </motion.div>
     </motion.div>
@@ -1378,8 +1523,8 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, v
   const hasChunk = !!state.chunk;
 
   const bgStyle = isBoss
-    ? { background: `linear-gradient(180deg, ${C.bossNavy} 0%, ${C.bossNavyMid} 100%)` }
-    : { background: `linear-gradient(180deg, ${C.peach} 0%, #FFD4C0 40%, ${C.cream} 100%)` };
+    ? { background: 'linear-gradient(180deg, #2A2848 0%, #1A1630 50%, #2A2040 100%)' }
+    : { background: 'linear-gradient(180deg, #FFE4F4 0%, #FFF0E8 40%, #E8F4FF 100%)' };
 
   return (
     <div style={{
@@ -1388,22 +1533,37 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, v
       overflow: 'hidden',
       ...bgStyle,
     }}>
+      {/* Currency bar — always on very top */}
+      <CurrencyBar isBoss={isBoss} />
       <HUD state={state} onPause={onPause} isBoss={isBoss} />
 
-      {/* Merge-K badge */}
+      {/* Big hypercasual MERGE N badge */}
       <div style={{
-        display: 'flex', justifyContent: 'center', paddingTop: 6, paddingBottom: 2, flexShrink: 0,
+        display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 4, flexShrink: 0,
       }}>
-        <div style={{
-          fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 12,
-          letterSpacing: 1.5,
-          color: isBoss ? 'rgba(244,220,120,0.9)' : C.accent,
-          background: isBoss ? 'rgba(255,255,255,0.07)' : 'rgba(232,116,90,0.1)',
-          border: `1.5px solid ${isBoss ? 'rgba(244,220,120,0.3)' : 'rgba(232,116,90,0.25)'}`,
-          borderRadius: 20, padding: '3px 14px',
-        }}>
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+          style={{
+            fontFamily: 'Fredoka One, Nunito, sans-serif',
+            fontSize: 32,
+            letterSpacing: 1,
+            color: '#FFF',
+            background: isBoss
+              ? 'linear-gradient(180deg, #9B8BFF 0%, #6B5BEE 100%)'
+              : 'linear-gradient(180deg, #FF9EBC 0%, #E8607A 100%)',
+            borderRadius: 999,
+            padding: '6px 28px',
+            boxShadow: isBoss
+              ? '0 5px 0 #3A30AA, 0 8px 20px rgba(107,91,238,0.4)'
+              : '0 5px 0 #B83050, 0 8px 20px rgba(232,96,122,0.4)',
+            border: '3px solid rgba(255,255,255,0.5)',
+            textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          }}
+        >
           MERGE {cfg.mergeSizeK}
-        </div>
+        </motion.div>
       </div>
 
       {/* Tower area — vertically centered */}
@@ -1458,6 +1618,8 @@ export default function Home() {
   // Staged vanish animation
   const [vanishHighlightIds, setVanishHighlightIds] = useState<Set<string>>(new Set());
   const [isAnimating, setIsAnimating] = useState(false);
+  // Separate particles state so burst can fire independently of gameState updates (no React batching lag)
+  const [burst, setBurst] = useState<Particle[]>([]);
 
   const chainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const msgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1486,15 +1648,13 @@ export default function Home() {
     }
   }, [gameState?.speechBubbles]);
 
-  // Auto-clear particles
+  // Auto-clear burst particles after animation completes
   useEffect(() => {
-    if (gameState?.particles.length) {
-      const t = setTimeout(() => {
-        setGameState(prev => prev ? { ...prev, particles: [] } : prev);
-      }, 2500);
+    if (burst.length) {
+      const t = setTimeout(() => setBurst([]), 1200);
       return () => clearTimeout(t);
     }
-  }, [gameState?.particles]);
+  }, [burst]);
 
   const startLevel = useCallback((idx: number) => {
     const cfg = LEVELS[idx];
@@ -1579,11 +1739,11 @@ export default function Home() {
         return;
       }
 
-      // ── Staged vanish sequence ────────────────────────────────────────────
-      // Timing: 120ms settle → 300ms glow highlight → hearts burst → 300ms gap (new cats visible)
-      const SHOW_MS = 120;   // brief settle after placement
-      const SHAKE_MS = 300;  // glow highlight before cats pop
-      const GAP_MS = 300;    // pause AFTER vanish so chain cats are visible before next step
+      // ── Staged vanish sequence — hypercasual timing ─────────────────────────
+      // Timing: 60ms settle → 250ms glow show → pop + burst → 220ms gap
+      const SHOW_MS = 60;    // near-instant settle after placement
+      const SHAKE_MS = 600;  // 0.6s glow (250 + 350ms) so player clearly sees the vanish
+      const GAP_MS = 220;    // brief pause so chain cats are visible before next step
       const STEP_MS = SHOW_MS + SHAKE_MS + GAP_MS;
 
       setIsAnimating(true);
@@ -1597,31 +1757,32 @@ export default function Home() {
           setVanishHighlightIds(new Set());
         }, stepStart);
 
-        // 2. Highlight the vanishing cats (glow + shake)
+        // 2. Highlight the vanishing cats (glow)
         const t2 = setTimeout(() => {
           setVanishHighlightIds(new Set(step.vanishingIds));
         }, stepStart + SHOW_MS);
 
-        // 3. Transition to post-state (cats removed) + hearts explosion
+        // 2b. Fire burst 50ms after glow starts
+        const t2b = setTimeout(() => {
+          const mid = getVanishMidpoint(step.vanishingIds);
+          const heartCount = 7 + step.vanishingIds.length * 2;
+          setBurst(spawnParticles(mid.x, mid.y, heartCount));
+        }, stepStart + SHOW_MS + 50);
+
+        // 3. Pop: remove cats from state after glow
         const t3 = setTimeout(() => {
           setVanishHighlightIds(new Set());
-          // Spawn hearts from the midpoint of the vanishing cats' DOM positions
-          const mid = getVanishMidpoint(step.vanishingIds);
-          const heartCount = 8 + step.vanishingIds.length * 3;
-          const hearts = spawnParticles(mid.x, mid.y, heartCount);
-          setGameState(prev => prev ? { ...step.postState, particles: hearts } : step.postState);
-          // Show chain banner for combos
+          setGameState(prev => prev ? { ...step.postState, particles: [] } : step.postState);
           if (i >= 1) {
             setShowChain(i + 1);
             if (chainTimerRef.current) clearTimeout(chainTimerRef.current);
             chainTimerRef.current = setTimeout(() => setShowChain(0), 1200);
           }
-          // Purr bubble on each vanish
           const bubble = makeBubble('purr ♥', (event.clientX ?? 160) - 20, (event.clientY ?? 300) - 60);
           setGameState(prev => prev ? { ...prev, speechBubbles: [bubble] } : prev);
         }, stepStart + SHOW_MS + SHAKE_MS);
 
-        animTimersRef.current.push(t1, t2, t3);
+        animTimersRef.current.push(t1, t2, t2b, t3);
       });
 
       // 4. After all steps, commit the final resolved state
@@ -1682,7 +1843,7 @@ export default function Home() {
       </AnimatePresence>
 
       <SpeechBubbleLayer bubbles={gameState.speechBubbles} />
-      <ParticleLayer particles={gameState.particles} />
+      <ParticleLayer particles={burst} />
       <GameMessage message={gameState.message} />
       <ChainBanner chain={showChain} isBoss={isBoss} />
 
