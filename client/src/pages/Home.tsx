@@ -48,7 +48,7 @@ const KITTEN_IMGS: Record<CoatId, string> = {
 
 // ─── UI asset URLs ────────────────────────────────────────────────────────────
 const A = {
-  // Tower states
+  // Tower states (capacity-based variants)
   towerN2Empty:    '/manus-storage/tower-n2-empty_4ab60b5f.png',
   towerN3Empty:    '/manus-storage/tower-n3-empty_c3c7bffb.png',
   towerN4Empty:    '/manus-storage/tower-n4-empty_7ee14419.png',
@@ -59,6 +59,14 @@ const A = {
   towerSelected:   '/manus-storage/tower-selected_2237999b.png',
   towerLocked:     '/manus-storage/tower-locked_aba116df.png',
   towerFrozen:     '/manus-storage/tower-frozen_bc2b239c.png',
+  // New capacity-specific tower PNGs (4-10 cats)
+  tower4:  '/manus-storage/tower-4-cats_ffab4384.png',
+  tower5:  '/manus-storage/tower-5-cats_c2ad6cdb.png',
+  tower6:  '/manus-storage/tower-6-cats_1a73deef.png',
+  tower7:  '/manus-storage/tower-7-cats_713f1f6f.png',
+  tower8:  '/manus-storage/tower-8-cats_41f4ac2c.png',
+  tower9:  '/manus-storage/tower-9-cats_03f77149.png',
+  tower10: '/manus-storage/tower-10-cats_0de06d4b.png',
   plaque:          '/manus-storage/plaque_1b59acd4.png',
   // Map
   mapBanner:       '/manus-storage/map-banner_499b49c7.png',
@@ -212,6 +220,7 @@ function TowerContainer({
   const canPlace = hasChunk && !container.oneWayOut;
 
   // Pick the tower background PNG based on state
+  // Pick tower PNG by capacity — new assets cover 4-10, fall back to old for 2-3
   const towerBgImg = container.frozen
     ? A.towerFrozen
     : container.coatLocked
@@ -219,19 +228,24 @@ function TowerContainer({
     : isSelected
     ? A.towerSelected
     : (() => {
-        const hasStack = container.stack.length > 0;
         const cap = container.capacity;
-        if (hasStack) {
-          if (cap <= 3) return A.towerN3Stacked;
-          if (cap === 4) return A.towerN4Stacked;
-          return A.towerN5Stacked;
-        } else {
-          if (cap <= 2) return A.towerN2Empty;
-          if (cap === 3) return A.towerN3Empty;
-          if (cap === 4) return A.towerN4Empty;
-          return A.towerN5Empty;
-        }
+        if (cap >= 10) return A.tower10;
+        if (cap === 9)  return A.tower9;
+        if (cap === 8)  return A.tower8;
+        if (cap === 7)  return A.tower7;
+        if (cap === 6)  return A.tower6;
+        if (cap === 5)  return A.tower5;
+        if (cap === 4)  return A.tower4;
+        // Fallback for capacity 2-3
+        const hasStack = container.stack.length > 0;
+        if (cap === 3) return hasStack ? A.towerN3Stacked : A.towerN3Empty;
+        return hasStack ? A.towerN3Stacked : A.towerN2Empty;
       })();
+
+  // Scale pillar height proportionally to capacity so taller towers have more room
+  const BASE_H = 130; // height for capacity 4
+  const PER_CAT = 28; // extra px per cat slot above 4
+  const cap = container.capacity;
 
   const borderColor = isSelected
     ? C.accent
@@ -239,9 +253,10 @@ function TowerContainer({
     ? C.peachMid
     : 'transparent';
 
-  // PILLAR_HEIGHT: fixed height for the cat shaft — cats stack from bottom up inside it
-  const PILLAR_H = 190;
-  const CAT_SIZE = 46;
+  // PILLAR_HEIGHT scales with capacity so taller towers have more room for cats
+  const PILLAR_H = BASE_H + Math.max(0, cap - 4) * PER_CAT;
+  // Cat size shrinks slightly for larger towers so they still fit
+  const CAT_SIZE = cap <= 5 ? 48 : cap <= 7 ? 44 : cap <= 9 ? 40 : 36;
 
   return (
     <motion.div
