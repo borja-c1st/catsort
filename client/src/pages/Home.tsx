@@ -98,12 +98,13 @@ function TowerContainer({
   containerIndex: number;
   isSelected: boolean;
   hasChunk: boolean;
-  onTap: (e: React.MouseEvent) => void;
+  onTap: (e: React.MouseEvent, towerCenterX: number, towerCenterY: number) => void;
   isBoss: boolean;
   vanishHighlightIds?: Set<string>;
 }) {
   const isEmpty = container.stack.length === 0;
   const canPlace = hasChunk && !container.oneWayOut;
+  const towerRef = useRef<HTMLDivElement>(null);
 
   // Cat size — fixed at 44px for up to 10 cats
   const CAT_SIZE = 44;
@@ -112,9 +113,19 @@ function TowerContainer({
 
   const bedImg = getBedImg(containerIndex);
 
+  const handleClick = (e: React.MouseEvent) => {
+    // Compute the vertical centre of the cat stack for heart spawn origin
+    const rect = towerRef.current?.getBoundingClientRect();
+    const cx = rect ? rect.left + rect.width / 2 : e.clientX;
+    // Aim at the lower-middle of the shaft where cats live
+    const cy = rect ? rect.top + rect.height * 0.55 : e.clientY;
+    onTap(e, cx, cy);
+  };
+
   return (
     <motion.div
-      onClick={onTap}
+      ref={towerRef}
+      onClick={handleClick}
       whileTap={{ scale: 0.96 }}
       style={{
         position: 'relative',
@@ -382,15 +393,20 @@ function ParticleLayer({ particles }: { particles: Particle[] }) {
         {particles.map(p => (
           <motion.div
             key={p.id}
-            initial={{ x: p.x, y: p.y, scale: 1.2, opacity: 1 }}
+            initial={{ x: p.x, y: p.y, scale: 0.5, opacity: 0 }}
             animate={{
-              x: p.x + p.vx * 90,
-              y: p.y + p.vy * 90,
-              scale: 0,
-              opacity: 0,
+              x: p.x + p.vx * 50,
+              y: p.y + p.vy * 50,
+              scale: [0.5, 1.0, 0.7, 0],
+              opacity: [0, 1, 1, 0],
             }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.85, ease: [0.22, 1, 0.36, 1] }}
+            transition={{
+              duration: 1.6,
+              ease: 'easeOut',
+              opacity: { times: [0, 0.12, 0.65, 1] },
+              scale: { times: [0, 0.12, 0.6, 1] },
+            }}
             style={{ position: 'absolute', fontSize: p.size, lineHeight: 1 }}
           >
             {'💗'}
@@ -401,18 +417,23 @@ function ParticleLayer({ particles }: { particles: Particle[] }) {
   );
 }
 
+/**
+ * Spawn hearts that drift gently upward from the cat position.
+ * x/y should be the screen-space centre of the vanishing cats.
+ */
 function spawnParticles(x: number, y: number, count: number): Particle[] {
-  // All hearts, bursting in all directions
   return Array.from({ length: count }, (_, i) => {
-    const angle = (i / count) * Math.PI * 2;
-    const speed = 1.8 + Math.random() * 2.2;
+    // Mostly upward arc with gentle horizontal spread
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 1.2;
+    const speed = 0.4 + Math.random() * 0.9;
     return {
       id: `p${Date.now()}${i}`,
-      x, y,
+      x: x + (Math.random() - 0.5) * 28,
+      y: y + (Math.random() - 0.5) * 18,
       type: 'heart' as const,
       vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 1.2,
-      size: 14 + Math.random() * 12,
+      vy: Math.sin(angle) * speed,
+      size: 12 + Math.random() * 10,
     };
   });
 }
@@ -1178,7 +1199,7 @@ function TitleScreen({ onPlay }: { onPlay: () => void }) {
 
 function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, vanishHighlightIds }: {
   state: GameState;
-  onTap: (containerId: string, e: React.MouseEvent) => void;
+  onTap: (containerId: string, e: React.MouseEvent, towerCenterX: number, towerCenterY: number) => void;
   onPause: () => void;
   onUndo: () => void;
   onAddMoves: () => void;
@@ -1220,7 +1241,7 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, v
               containerIndex={idx}
               isSelected={state.selectedContainerId === container.id}
               hasChunk={hasChunk}
-              onTap={(e: React.MouseEvent) => onTap(container.id, e)}
+              onTap={(e: React.MouseEvent, cx: number, cy: number) => onTap(container.id, e, cx, cy)}
               isBoss={isBoss}
               vanishHighlightIds={vanishHighlightIds}
             />
@@ -1312,7 +1333,7 @@ export default function Home() {
     } : prev);
   }, []);
 
-  const handleTap = useCallback((containerId: string, event: React.MouseEvent) => {
+  const handleTap = useCallback((containerId: string, event: React.MouseEvent, towerCenterX = 200, towerCenterY = 350) => {
     if (!gameState || gameState.phase !== 'playing') return;
     if (isAnimating) return; // block input during vanish sequence
 
@@ -1362,10 +1383,10 @@ export default function Home() {
       }
 
       // ── Staged vanish sequence ────────────────────────────────────────────
-      // Timing per step: 200ms show pre-state → 550ms highlight/shake → 100ms post-state
-      const SHOW_MS = 400;   // pause to see full stack after placement
-      const SHAKE_MS = 650;  // highlight + shake animation duration
-      const GAP_MS = 120;    // brief gap before next step
+      // Timing per step: 150ms show pre-state → 350ms highlight → hearts burst
+      const SHOW_MS = 150;   // brief pause after placement before highlight
+      const SHAKE_MS = 350;  // highlight duration before hearts fire
+      const GAP_MS = 80;     // gap before next chain step
       const STEP_MS = SHOW_MS + SHAKE_MS + GAP_MS;
 
       setIsAnimating(true);
@@ -1389,7 +1410,7 @@ export default function Home() {
           setVanishHighlightIds(new Set());
           // Spawn hearts burst at the tap location for each vanish step
           const heartCount = 10 + step.vanishingIds.length * 2;
-          const hearts = spawnParticles(event.clientX ?? 200, event.clientY ?? 350, heartCount);
+          const hearts = spawnParticles(towerCenterX, towerCenterY, heartCount);
           setGameState(prev => prev ? { ...step.postState, particles: [...(prev.particles ?? []), ...hearts] } : step.postState);
           // Show chain banner for combos
           if (i >= 1) {
