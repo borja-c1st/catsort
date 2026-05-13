@@ -36,6 +36,65 @@ const CAT_IMGS: Record<CoatId, string> = {
   siamese: '/manus-storage/siamese_2ffcf313.png',
 };
 
+// ─── Kitten images (used in goal strip / level complete) ────────────────────────
+const KITTEN_IMGS: Record<CoatId, string> = {
+  ginger:  '/manus-storage/kitten-ginger_645d1633.png',
+  white:   '/manus-storage/kitten-white_d0147484.png',
+  black:   '/manus-storage/kitten-black_b0db4380.png',
+  tabby:   '/manus-storage/kitten-tabby_1186b8e3.png',
+  calico:  '/manus-storage/kitten-calico_50de4d87.png',
+  siamese: '/manus-storage/kitten-siamese_98f2fa78.png',
+};
+
+// ─── UI asset URLs ────────────────────────────────────────────────────────────
+const A = {
+  // Tower states
+  towerN2Empty:    '/manus-storage/tower-n2-empty_4ab60b5f.png',
+  towerN3Empty:    '/manus-storage/tower-n3-empty_c3c7bffb.png',
+  towerN4Empty:    '/manus-storage/tower-n4-empty_7ee14419.png',
+  towerN5Empty:    '/manus-storage/tower-n5-empty_d11a9867.png',
+  towerN3Stacked:  '/manus-storage/tower-n3-stacked_b8603250.png',
+  towerN4Stacked:  '/manus-storage/tower-n4-stacked_062362ab.png',
+  towerN5Stacked:  '/manus-storage/tower-n5-stacked_f7bf6ad5.png',
+  towerSelected:   '/manus-storage/tower-selected_2237999b.png',
+  towerLocked:     '/manus-storage/tower-locked_aba116df.png',
+  towerFrozen:     '/manus-storage/tower-frozen_bc2b239c.png',
+  plaque:          '/manus-storage/plaque_1b59acd4.png',
+  // Map
+  mapBanner:       '/manus-storage/map-banner_499b49c7.png',
+  mapNodeCurrent:  '/manus-storage/map-node-current_8376b5f6.png',
+  mapNodeBoss:     '/manus-storage/map-node-boss_05df8254.png',
+  mapNodeDone1:    '/manus-storage/map-node-done-1_b7bea12f.png',
+  mapNodeDone3:    '/manus-storage/map-node-done-3_cf1cacbd.png',
+  mapNodeLocked:   '/manus-storage/map-node-locked_bbc89941.png',
+  // Stars
+  starOn:          '/manus-storage/star-on_a37d6a47.png',
+  starOff:         '/manus-storage/star-off_ccaab9e5.png',
+  starOnBig:       '/manus-storage/star-on-big_b9380cda.png',
+  // Goal
+  goalPill:        '/manus-storage/goal-pill_784349f2.png',
+  goalCard:        '/manus-storage/goal-card_3c06c850.png',
+  // HUD chips
+  chipMoves:       '/manus-storage/chip-moves_74ecaa95.png',
+  chipChain:       '/manus-storage/chip-chain_864e5f8b.png',
+  chipScore:       '/manus-storage/chip-score_0e77272e.png',
+  chipPause:       '/manus-storage/chip-pause_fab80519.png',
+  chipCog:         '/manus-storage/chip-cog_fea69ce4.png',
+  chipTimeAlert:   '/manus-storage/chip-time-alert_e23ed43a.png',
+  chainTag:        '/manus-storage/chain-tag_c1385af6.png',
+  // Boosters
+  boosterUndo:     '/manus-storage/booster-undo_0e7fa853.png',
+  boosterMoves:    '/manus-storage/booster-moves_a607edc5.png',
+  boosterSolo:     '/manus-storage/booster-solo_240e6f3a.png',
+  boosterBomb:     '/manus-storage/booster-bomb_5205d3f6.png',
+  // Burst effects
+  burstHearts:     '/manus-storage/vanish-burst-hearts_768f2efd.png',
+  burstLeaves:     '/manus-storage/vanish-burst-leaves_49c2af02.png',
+  // Buttons
+  btnPrimary:      '/manus-storage/btn-primary_8172d026.png',
+  btnGhost:        '/manus-storage/btn-ghost_39cb2f76.png',
+};
+
 // ─── Design tokens ────────────────────────────────────────────────────────────
 
 const C = {
@@ -79,11 +138,11 @@ function CatImg({ coat, size = 52 }: { coat: CoatId; size?: number }) {
 function PillarCap({ isBoss }: { isBoss: boolean }) {
   return (
     <div style={{
-      width: '100%', height: 14,
+      width: '100%', height: 16,
       background: isBoss
         ? 'linear-gradient(180deg, #4A4870 0%, #3A3860 100%)'
         : `linear-gradient(180deg, ${C.platform} 0%, ${C.platformDark} 100%)`,
-      borderRadius: '12px 12px 4px 4px',
+      borderRadius: '10px 10px 3px 3px',
       boxShadow: isBoss ? '0 2px 6px rgba(0,0,0,0.4)' : `0 2px 4px ${C.platformDark}88`,
     }} />
   );
@@ -110,27 +169,27 @@ function PillarBase({ n, isBoss }: { n: number; isBoss: boolean }) {
         borderRadius: '4px 4px 8px 8px',
         boxShadow: isBoss ? '0 3px 8px rgba(0,0,0,0.5)' : '0 3px 6px rgba(0,0,0,0.2)',
       }} />
-      {/* N-grab badge */}
+      {/* N-grab badge using plaque PNG */}
       <div style={{
-        marginTop: 6,
-        width: 32, height: 32,
-        background: isBoss
-          ? 'linear-gradient(180deg, #6A68A8 0%, #4A4888 100%)'
-          : `linear-gradient(180deg, ${C.plaque} 0%, ${C.plaqueDark} 100%)`,
-        borderRadius: 10,
+        marginTop: 4,
+        position: 'relative',
+        width: 44, height: 28,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
-        border: `1.5px solid ${isBoss ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.5)'}`,
       }}>
+        <img src={A.plaque} alt="" width={44} height={28}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill', opacity: isBoss ? 0.7 : 1 }}
+          draggable={false}
+        />
         <span style={{
+          position: 'relative', zIndex: 1,
           fontFamily: 'Nunito, sans-serif',
           fontWeight: 900,
-          fontSize: 15,
+          fontSize: 14,
           color: '#FFF7E1',
           lineHeight: 1,
-          textShadow: '0 1px 2px rgba(0,0,0,0.35)',
+          textShadow: '0 1px 3px rgba(0,0,0,0.5)',
         }}>{n}</span>
       </div>
     </div>
@@ -152,25 +211,37 @@ function TowerContainer({
   const isFull = container.stack.length >= container.capacity;
   const canPlace = hasChunk && !container.oneWayOut;
 
+  // Pick the tower background PNG based on state
+  const towerBgImg = container.frozen
+    ? A.towerFrozen
+    : container.coatLocked
+    ? A.towerLocked
+    : isSelected
+    ? A.towerSelected
+    : (() => {
+        const hasStack = container.stack.length > 0;
+        const cap = container.capacity;
+        if (hasStack) {
+          if (cap <= 3) return A.towerN3Stacked;
+          if (cap === 4) return A.towerN4Stacked;
+          return A.towerN5Stacked;
+        } else {
+          if (cap <= 2) return A.towerN2Empty;
+          if (cap === 3) return A.towerN3Empty;
+          if (cap === 4) return A.towerN4Empty;
+          return A.towerN5Empty;
+        }
+      })();
+
   const borderColor = isSelected
     ? C.accent
     : canPlace
     ? C.peachMid
-    : isBoss
-    ? 'rgba(255,255,255,0.15)'
-    : 'rgba(200,168,136,0.4)';
-
-  const bgColor = isBoss
-    ? 'rgba(42,40,72,0.6)'
-    : container.frozen
-    ? 'rgba(168,200,232,0.2)'
-    : container.coatLocked
-    ? `${COAT_COLORS[container.coatLocked].body}22`
-    : 'rgba(255,243,232,0.7)';
+    : 'transparent';
 
   // PILLAR_HEIGHT: fixed height for the cat shaft — cats stack from bottom up inside it
   const PILLAR_H = 190;
-  const CAT_SIZE = 48;
+  const CAT_SIZE = 46;
 
   return (
     <motion.div
@@ -201,51 +272,46 @@ function TowerContainer({
         </div>
       )}
 
-      {/* Pillar cap */}
-      <PillarCap isBoss={isBoss} />
-
-      {/* Pillar shaft — FIXED HEIGHT */}
+      {/* Pillar shaft — FIXED HEIGHT with PNG background */}
       <motion.div
         animate={
           isSelected
-            ? { boxShadow: `0 0 0 2.5px ${C.accent}, 0 6px 24px rgba(232,116,90,0.35)` }
+            ? { filter: 'drop-shadow(0 0 6px rgba(232,116,90,0.7))' }
             : canPlace
-            ? { boxShadow: `0 0 0 2px ${C.peachMid}` }
-            : { boxShadow: '0 2px 10px rgba(0,0,0,0.10)' }
+            ? { filter: 'drop-shadow(0 0 4px rgba(200,200,100,0.5))' }
+            : { filter: 'none' }
         }
         style={{
           position: 'relative',
           width: '100%',
           height: PILLAR_H,
-          background: bgColor,
-          border: `2px solid ${borderColor}`,
-          borderRadius: '0 0 8px 8px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'flex-end',
           alignItems: 'center',
           padding: '4px 4px 6px',
           overflow: 'hidden',
+          border: `2px solid ${borderColor}`,
+          borderRadius: 6,
         }}
       >
-        {/* Capacity dots at top */}
-        <div style={{
-          position: 'absolute', top: 6, left: 0, right: 0,
-          display: 'flex', justifyContent: 'center', gap: 3,
-        }}>
-          {Array.from({ length: container.capacity }).map((_, i) => (
-            <div key={i} style={{
-              width: 5, height: 5, borderRadius: '50%',
-              background: i < container.stack.length
-                ? (isBoss ? 'rgba(255,255,255,0.6)' : C.brownLight)
-                : (isBoss ? 'rgba(255,255,255,0.12)' : '#E8DCC8'),
-              transition: 'background 0.2s',
-            }} />
-          ))}
-        </div>
+        {/* Tower PNG background */}
+        <img
+          src={towerBgImg}
+          alt=""
+          draggable={false}
+          style={{
+            position: 'absolute', inset: 0,
+            width: '100%', height: '100%',
+            objectFit: 'fill',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
 
         {/* Cat stack — grows upward from bottom */}
         <div style={{
+          position: 'relative', zIndex: 2,
           display: 'flex',
           flexDirection: 'column-reverse',
           alignItems: 'center',
@@ -260,7 +326,7 @@ function TowerContainer({
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.3, opacity: 0, y: -16 }}
                 transition={{ type: 'spring', stiffness: 340, damping: 24, delay: idx * 0.015 }}
-                style={{ display: 'flex', justifyContent: 'center', marginBottom: -12 }}
+                style={{ display: 'flex', justifyContent: 'center', marginBottom: -10 }}
               >
                 <CatImg coat={item.coat} size={CAT_SIZE} />
               </motion.div>
@@ -268,25 +334,10 @@ function TowerContainer({
           </AnimatePresence>
         </div>
 
-        {/* Empty state */}
-        {isEmpty && (
-          <div style={{
-            position: 'absolute', inset: 0, display: 'flex',
-            flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            opacity: 0.3, pointerEvents: 'none',
-          }}>
-            <span style={{ fontSize: 22 }}>🐾</span>
-            <span style={{
-              fontSize: 10, fontFamily: 'Caveat, cursive',
-              color: isBoss ? '#fff' : C.brownMid, marginTop: 2,
-            }}>empty</span>
-          </div>
-        )}
-
         {/* Full indicator */}
         {isFull && (
           <div style={{
-            position: 'absolute', top: 4, right: 4,
+            position: 'absolute', top: 4, right: 4, zIndex: 3,
             width: 8, height: 8, borderRadius: '50%',
             background: '#E85A5A',
             boxShadow: '0 0 4px rgba(232,90,90,0.6)',
@@ -471,13 +522,17 @@ function HUD({ state, onPause, isBoss }: { state: GameState; onPause: () => void
         <button
           onClick={onPause}
           style={{
-            width: 32, height: 32, borderRadius: '50%',
-            background: isBoss ? 'rgba(255,255,255,0.1)' : C.peach,
-            border: `1.5px solid ${hudBorder}`,
+            width: 36, height: 36, borderRadius: '50%',
+            background: 'transparent',
+            border: 'none', padding: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 14, cursor: 'pointer',
+            cursor: 'pointer',
           }}
-        >⏸</button>
+        >
+          <img src={A.chipPause} alt="Pause" width={36} height={36}
+            draggable={false} style={{ objectFit: 'contain' }}
+          />
+        </button>
         <div style={{
           fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 13,
           color: isBoss ? C.butter : C.brownMid, letterSpacing: 1,
@@ -504,8 +559,23 @@ function HUD({ state, onPause, isBoss }: { state: GameState; onPause: () => void
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
           {goalEntries.map(([coat, prog]) => (
-            <div key={coat} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
-              <CatImg coat={coat} size={28} />
+            <div key={coat} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1 }}>
+              {/* Goal pill PNG background */}
+              <div style={{ position: 'relative', width: 44, height: 44 }}>
+                <img src={A.goalPill} alt="" draggable={false}
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill',
+                    opacity: prog.cleared >= prog.total ? 0.5 : 1 }}
+                />
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                  <img
+                    src={KITTEN_IMGS[coat]}
+                    alt={coat}
+                    width={30} height={30}
+                    draggable={false}
+                    style={{ objectFit: 'contain' }}
+                  />
+                </div>
+              </div>
               <div style={{
                 fontSize: 11, fontWeight: 800, fontFamily: 'Nunito, sans-serif',
                 color: prog.cleared >= prog.total ? C.sage : textColor,
@@ -519,44 +589,56 @@ function HUD({ state, onPause, isBoss }: { state: GameState; onPause: () => void
 
       {/* Stats row */}
       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        {/* Moves */}
-        <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', gap: 5,
-          background: isBoss ? 'rgba(255,255,255,0.06)' : C.cream,
-          borderRadius: 10, padding: '4px 8px',
-          border: state.budget.movesLeft <= 5 ? `1.5px solid ${C.accent}` : `1.5px solid ${hudBorder}`,
-        }}>
-          <span style={{ fontSize: 14 }}>🐾</span>
-          <span style={{
-            fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 18,
-            color: state.budget.movesLeft <= 5 ? C.accent : textColor,
-          }}>{state.budget.movesLeft}</span>
-          <span style={{ fontSize: 10, color: subColor, fontFamily: 'Nunito, sans-serif' }}>moves</span>
+        {/* Moves chip */}
+        <div style={{ position: 'relative', flex: 1, height: 40 }}>
+          <img src={state.budget.movesLeft <= 5 ? A.chipTimeAlert : A.chipMoves} alt=""
+            draggable={false}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
+          />
+          <div style={{
+            position: 'relative', zIndex: 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            height: '100%', gap: 3,
+          }}>
+            <span style={{
+              fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 17,
+              color: state.budget.movesLeft <= 5 ? '#E85A5A' : textColor,
+            }}>{state.budget.movesLeft}</span>
+            <span style={{ fontSize: 9, color: subColor, fontFamily: 'Nunito, sans-serif' }}>moves</span>
+          </div>
         </div>
-        {/* Chain */}
-        <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', gap: 5,
-          background: isBoss ? 'rgba(255,255,255,0.06)' : C.cream,
-          borderRadius: 10, padding: '4px 8px',
-          border: `1.5px solid ${hudBorder}`,
-        }}>
-          <span style={{ fontSize: 14 }}>⏱</span>
-          <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 18, color: textColor }}>
-            ×{state.chainLength}
-          </span>
-          <span style={{ fontSize: 10, color: subColor, fontFamily: 'Nunito, sans-serif' }}>chain</span>
+        {/* Chain chip */}
+        <div style={{ position: 'relative', flex: 1, height: 40 }}>
+          <img src={A.chipChain} alt=""
+            draggable={false}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
+          />
+          <div style={{
+            position: 'relative', zIndex: 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            height: '100%', gap: 3,
+          }}>
+            <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 17, color: textColor }}>
+              ×{state.chainLength}
+            </span>
+            <span style={{ fontSize: 9, color: subColor, fontFamily: 'Nunito, sans-serif' }}>chain</span>
+          </div>
         </div>
-        {/* Score */}
-        <div style={{
-          flex: 1, display: 'flex', alignItems: 'center', gap: 5,
-          background: isBoss ? 'rgba(255,255,255,0.06)' : C.cream,
-          borderRadius: 10, padding: '4px 8px',
-          border: `1.5px solid ${hudBorder}`,
-        }}>
-          <span style={{ fontSize: 14 }}>⭐</span>
-          <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 15, color: textColor }}>
-            {state.score.toLocaleString()}
-          </span>
+        {/* Score chip */}
+        <div style={{ position: 'relative', flex: 1, height: 40 }}>
+          <img src={A.chipScore} alt=""
+            draggable={false}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
+          />
+          <div style={{
+            position: 'relative', zIndex: 1,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            height: '100%',
+          }}>
+            <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 14, color: textColor }}>
+              {state.score.toLocaleString()}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -593,10 +675,10 @@ function BoosterBar({
   const textColor = isBoss ? '#E8E0F0' : C.brown;
 
   const boosters = [
-    { icon: '↶', label: 'Undo', onClick: onUndo, disabled: !undoAvailable || hasChunk },
-    { icon: '🐾', label: '+5 moves', onClick: onAddMoves, disabled: false },
-    { icon: '☝︎', label: 'Solo grab', onClick: onSoloGrab, disabled: hasChunk },
-    { icon: '💣', label: 'Color bomb', onClick: onColorBomb, disabled: hasChunk },
+    { img: A.boosterUndo,  label: 'Undo',       onClick: onUndo,       disabled: !undoAvailable || hasChunk },
+    { img: A.boosterMoves, label: '+5 moves',   onClick: onAddMoves,   disabled: false },
+    { img: A.boosterSolo,  label: 'Solo grab',  onClick: onSoloGrab,   disabled: hasChunk },
+    { img: A.boosterBomb,  label: 'Color bomb', onClick: onColorBomb,  disabled: hasChunk },
   ];
 
   return (
@@ -629,7 +711,10 @@ function BoosterBar({
             opacity: b.disabled ? 0.4 : 1,
           }}
         >
-          <span style={{ fontSize: 18 }}>{b.icon}</span>
+          <img src={b.img} alt={b.label} width={36} height={36}
+            draggable={false}
+            style={{ objectFit: 'contain' }}
+          />
           <span style={{
             fontSize: 9, fontFamily: 'Nunito, sans-serif', fontWeight: 700,
             color: textColor, textAlign: 'center', lineHeight: 1.2,
@@ -672,9 +757,9 @@ function ChainBanner({ chain, isBoss }: { chain: number; isBoss: boolean }) {
     <AnimatePresence>
       <motion.div
         key={chain}
-        initial={{ scale: 0.5, opacity: 0 }}
-        animate={{ scale: 1.05, opacity: 1 }}
-        exit={{ scale: 1.3, opacity: 0 }}
+        initial={{ scale: 0.5, opacity: 0, y: 10 }}
+        animate={{ scale: 1.05, opacity: 1, y: 0 }}
+        exit={{ scale: 1.3, opacity: 0, y: -10 }}
         transition={{ duration: 0.35 }}
         style={{
           position: 'fixed', top: '42%', left: '50%',
@@ -682,18 +767,19 @@ function ChainBanner({ chain, isBoss }: { chain: number; isBoss: boolean }) {
           zIndex: 55, pointerEvents: 'none', textAlign: 'center',
         }}
       >
-        <div style={{
-          fontFamily: 'Nunito, sans-serif', fontWeight: 900,
-          fontSize: 42,
-          color: isBoss ? C.butter : C.accent,
-          textShadow: isBoss
-            ? `0 2px 12px rgba(244,220,120,0.6)`
-            : `0 2px 12px rgba(232,116,90,0.5)`,
-        }}>
-          CHAIN ×{chain}
-        </div>
-        <div style={{ fontSize: 24, marginTop: -4 }}>
-          {isBoss ? '✨✨✨' : '💗💗💗'}
+        <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 180, height: 72 }}>
+          <img src={A.chainTag} alt="" draggable={false}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'fill' }}
+          />
+          <span style={{
+            position: 'relative', zIndex: 1,
+            fontFamily: 'Nunito, sans-serif', fontWeight: 900,
+            fontSize: 32,
+            color: isBoss ? C.butter : C.accent,
+            textShadow: isBoss
+              ? `0 2px 8px rgba(244,220,120,0.6)`
+              : `0 2px 8px rgba(232,116,90,0.5)`,
+          }}>CHAIN ×{chain}</span>
         </div>
       </motion.div>
     </AnimatePresence>
@@ -779,15 +865,22 @@ function LevelCompleteOverlay({ state, onNext, onReplay, onMenu }: {
         </div>
 
         {/* Stars */}
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           {[1, 2, 3].map(s => (
             <motion.div
               key={s}
               initial={{ scale: 0, rotate: -30 }}
-              animate={{ scale: state.stars >= s ? 1.15 : 0.7, rotate: 0 }}
+              animate={{ scale: state.stars >= s ? 1.1 : 0.65, rotate: 0 }}
               transition={{ delay: s * 0.18, type: 'spring' }}
-              style={{ fontSize: 36, opacity: state.stars >= s ? 1 : 0.2 }}
-            >⭐</motion.div>
+            >
+              <img
+                src={state.stars >= s ? A.starOnBig : A.starOff}
+                alt={state.stars >= s ? 'star' : 'empty star'}
+                width={s === 2 ? 52 : 40} height={s === 2 ? 52 : 40}
+                draggable={false}
+                style={{ objectFit: 'contain', opacity: state.stars >= s ? 1 : 0.35 }}
+              />
+            </motion.div>
           ))}
         </div>
 
@@ -961,28 +1054,24 @@ function WorldMap({ onSelect, completedLevels, onBack }: {
       overflowY: 'auto',
     }}>
       <div style={{ width: '100%', maxWidth: 420, padding: '0 0 40px' }}>
-        {/* Header */}
-        <div style={{
-          background: 'rgba(255,243,232,0.95)',
-          borderBottom: `1.5px solid ${C.peachMid}`,
-          padding: '14px 16px',
-          display: 'flex', flexDirection: 'column', gap: 6,
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <motion.button whileTap={{ scale: 0.95 }} onClick={onBack} style={{
-              background: C.peach, border: `1.5px solid ${C.peachMid}`,
-              borderRadius: 12, padding: '4px 12px',
-              fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12,
-              color: C.brownMid, cursor: 'pointer',
-            }}>← Back</motion.button>
-            <div style={{
-              fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 14,
-              color: C.brownMid, letterSpacing: 1,
-            }}>WORLD 1 · COZY LIVING ROOM</div>
-            <div style={{ width: 56 }} />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ flex: 1, height: 8, background: C.peach, borderRadius: 4, overflow: 'hidden' }}>
+        {/* Map banner */}
+        <div style={{ position: 'relative', width: '100%' }}>
+          <img src={A.mapBanner} alt="World 1" draggable={false}
+            style={{ width: '100%', display: 'block', maxHeight: 120, objectFit: 'cover' }}
+          />
+          <motion.button whileTap={{ scale: 0.95 }} onClick={onBack} style={{
+            position: 'absolute', top: 10, left: 12,
+            background: 'rgba(255,243,232,0.9)', border: `1.5px solid ${C.peachMid}`,
+            borderRadius: 12, padding: '4px 12px',
+            fontFamily: 'Nunito, sans-serif', fontWeight: 700, fontSize: 12,
+            color: C.brownMid, cursor: 'pointer',
+          }}>← Back</motion.button>
+          {/* Progress bar overlay */}
+          <div style={{
+            position: 'absolute', bottom: 8, left: 12, right: 12,
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.4)', borderRadius: 4, overflow: 'hidden' }}>
               <div style={{
                 height: '100%', borderRadius: 4,
                 background: `linear-gradient(90deg, ${C.accent}, ${C.pink})`,
@@ -990,7 +1079,7 @@ function WorldMap({ onSelect, completedLevels, onBack }: {
                 transition: 'width 0.5s ease',
               }} />
             </div>
-            <div style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 13, color: C.brown }}>
+            <div style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 12, color: '#fff', textShadow: '0 1px 3px rgba(0,0,0,0.4)' }}>
               {Object.keys(completedLevels).length}/{LEVELS.length}
             </div>
           </div>
@@ -1043,25 +1132,37 @@ function WorldMap({ onSelect, completedLevels, onBack }: {
                   boxShadow: isNext ? `0 4px 16px rgba(232,116,90,0.2)` : 'none',
                 }}
               >
-                {/* Cat icon or lock */}
-                {locked ? (
-                  <div style={{ fontSize: 24 }}>🔒</div>
-                ) : level.isBoss ? (
-                  <div style={{ fontSize: 24 }}>⚡</div>
-                ) : (
-                  <CatImg coat={level.goalCoats[0]} size={36} />
-                )}
-
-                {/* Level number */}
-                <div style={{
-                  fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 16,
-                  color: locked ? C.brownLight : C.brown,
-                }}>{level.id}</div>
+                {/* Map node PNG */}
+                <div style={{ position: 'relative', width: 64, height: 64 }}>
+                  <img
+                    src={
+                      locked ? A.mapNodeLocked
+                      : level.isBoss ? A.mapNodeBoss
+                      : stars >= 3 ? A.mapNodeDone3
+                      : stars >= 1 ? A.mapNodeDone1
+                      : A.mapNodeCurrent
+                    }
+                    alt=""
+                    draggable={false}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  />
+                  {/* Level number overlay */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 18,
+                    color: locked ? 'rgba(255,255,255,0.5)' : '#fff',
+                    textShadow: '0 1px 4px rgba(0,0,0,0.5)',
+                  }}>{level.id}</div>
+                </div>
 
                 {/* Stars */}
-                <div style={{ display: 'flex', gap: 1, fontSize: 12 }}>
+                <div style={{ display: 'flex', gap: 2 }}>
                   {[1, 2, 3].map(s => (
-                    <span key={s} style={{ opacity: stars >= s ? 1 : 0.2 }}>⭐</span>
+                    <img key={s} src={stars >= s ? A.starOn : A.starOff} alt=""
+                      width={14} height={14} draggable={false}
+                      style={{ objectFit: 'contain' }}
+                    />
                   ))}
                 </div>
 
