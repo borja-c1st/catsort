@@ -287,10 +287,24 @@ function fireTriggers(event: TriggerEvent, state: GameState, containers: Contain
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
+export interface VanishStep {
+  /** IDs of items that will vanish in this step */
+  vanishingIds: string[];
+  /** coat of the vanishing run (for highlight colour) */
+  coat: CoatId;
+  /** the container state BEFORE this step's items are removed (full stack visible) */
+  preState: GameState;
+  /** the container state AFTER this step's items are removed */
+  postState: GameState;
+  scoreGain: number;
+}
+
 export interface MoveResult {
   success: boolean;
   error?: string;
   vanishResults: VanishResult[];
+  /** Ordered list of vanish animation steps for staged playback */
+  vanishSteps: VanishStep[];
   won: boolean;
   failed: boolean;
   newState: GameState;
@@ -320,26 +334,89 @@ export function cancelGrab(state: GameState): GameState {
 
 export function placeChunk(state: GameState, targetId: string): MoveResult {
   if (!state.chunk || !state.levelConfig) {
-    return { success: false, error: 'No chunk in flight', vanishResults: [], won: false, failed: false, newState: state };
+    return { success: false, error: 'No chunk in flight', vanishResults: [], vanishSteps: [], won: false, failed: false, newState: state };
   }
-  const containers = state.containers.map(c => ({ ...c, stack: c.stack.map(it => ({ ...it })) }));
-  const target = containers.find(c => c.id === targetId);
   const chunk = state.chunk;
 
-  if (!target) return { success: false, error: 'Target not found', vanishResults: [], won: false, failed: false, newState: state };
+  // ── Legality checks (operate on fresh copies) ──────────────────────────────
+  const checkContainers = state.containers.map(c => ({ ...c, stack: c.stack.map(it => ({ ...it })) }));
+  const checkTarget = checkContainers.find(c => c.id === targetId);
+  if (!checkTarget) return { success: false, error: 'Target not found', vanishResults: [], vanishSteps: [], won: false, failed: false, newState: state };
   if (targetId === chunk.sourceContainerId) {
-    return { success: false, error: 'Cannot place on same tower', vanishResults: [], won: false, failed: false, newState: cancelGrab(state) };
+    return { success: false, error: 'Cannot place on same tower', vanishResults: [], vanishSteps: [], won: false, failed: false, newState: cancelGrab(state) };
   }
-  if (target.oneWayOut) return { success: false, error: 'This tower only sends cats out!', vanishResults: [], won: false, failed: false, newState: state };
-  if (target.coatLocked) {
-    if (!chunk.items.every(it => it.coat === target.coatLocked || it.isWild)) {
-      return { success: false, error: `Only ${COAT_COLORS[target.coatLocked].label} cats here!`, vanishResults: [], won: false, failed: false, newState: state };
+  if (checkTarget.oneWayOut) return { success: false, error: 'This tower only sends cats out!', vanishResults: [], vanishSteps: [], won: false, failed: false, newState: state };
+  if (checkTarget.coatLocked) {
+    if (!chunk.items.every(it => it.coat === checkTarget.coatLocked || it.isWild)) {
+      return { success: false, error: `Only ${COAT_COLORS[checkTarget.coatLocked!].label} cats here!`, vanishResults: [], vanishSteps: [], won: false, failed: false, newState: state };
     }
   }
-  if (target.capacity - target.stack.length < chunk.items.length) {
-    return { success: false, error: 'Not enough space!', vanishResults: [], won: false, failed: false, newState: state };
+  if (checkTarget.capacity - checkTarget.stack.length < chunk.items.length) {
+    return { success: false, error: 'Not enough space!', vanishResults: [], vanishSteps: [], won: false, failed: false, newState: state };
   }
 
+  // ── Build vanishSteps for staged animation ─────────────────────────────────
+  // We replay the placement on a scratch copy to capture each intermediate state.
+  const vanishSteps: VanishStep[] = [];
+  {
+    // scratch copy for step-building
+    const sc = state.containers.map(c => ({ ...c, stack: c.stack.map(it => ({ ...it })) }));
+    const scTarget = sc.find(c => c.id === targetId)!;
+    scTarget.stack.push(...[...chunk.items].reverse());
+
+    let stepChain = 0;
+    while (true) {
+      const runs = findRuns(scTarget.stack, state.levelConfig.mergeSizeK);
+      if (!runs.length) break;
+      const toRemove = new Set<number>();
+      for (const run of runs) {
+        for (let i = run.startIdx; i < run.startIdx + run.length; i++) {
+          toRemove.add(i);
+          if (scTarget.stack[i].isBomb && i > 0) toRemove.add(i - 1);
+        }
+      }
+      const vanishingIds = scTarget.stack.filter((_, i) => toRemove.has(i)).map(it => it.id);
+      const coat = runs[0].coat;
+      if (scTarget.stack.some((it, i) => toRemove.has(i) && it.isLocked)) break;
+
+      // preState: full stack including cats about to vanish
+      const preContainers = sc.map(c => ({ ...c, stack: [...c.stack.map(it => ({ ...it }))] }));
+      const preState: GameState = {
+        ...state,
+        containers: preContainers,
+        chunk: null,
+        selectedContainerId: null,
+        message: null,
+        speechBubbles: [],
+        particles: [],
+      };
+
+      // remove the cats
+      scTarget.stack = scTarget.stack.filter((_, i) => !toRemove.has(i));
+      const mult = scTarget.doubleVanish ? 2 : 1;
+      const chainBonus = Math.pow(1.5, stepChain);
+      const stepScore = Math.round(vanishingIds.length * 10 * mult * chainBonus);
+
+      // postState: stack after removal
+      const postContainers = sc.map(c => ({ ...c, stack: [...c.stack.map(it => ({ ...it }))] }));
+      const postState: GameState = {
+        ...state,
+        containers: postContainers,
+        chunk: null,
+        selectedContainerId: null,
+        message: null,
+        speechBubbles: [],
+        particles: [],
+      };
+
+      vanishSteps.push({ vanishingIds, coat, preState, postState, scoreGain: stepScore });
+      stepChain++;
+    }
+  }
+
+  // ── Final state computation ────────────────────────────────────────────────
+  const containers = state.containers.map(c => ({ ...c, stack: c.stack.map(it => ({ ...it })) }));
+  const target = containers.find(c => c.id === targetId)!;
   target.stack.push(...[...chunk.items].reverse());
   const vanishResults = resolveVanishes(target, state.levelConfig.mergeSizeK, 0);
 
@@ -386,12 +463,12 @@ export function placeChunk(state: GameState, targetId: string): MoveResult {
 
   if (won) {
     const stars = computeStars(budget, state.levelConfig);
-    return { success: true, vanishResults, won: true, failed: false, newState: { ...newState, phase: 'levelComplete', stars } };
+    return { success: true, vanishResults, vanishSteps, won: true, failed: false, newState: { ...newState, phase: 'levelComplete', stars } };
   }
   if (failed) {
-    return { success: true, vanishResults, won: false, failed: true, newState: { ...newState, phase: 'levelFail' } };
+    return { success: true, vanishResults, vanishSteps, won: false, failed: true, newState: { ...newState, phase: 'levelFail' } };
   }
-  return { success: true, vanishResults, won: false, failed: false, newState };
+  return { success: true, vanishResults, vanishSteps, won: false, failed: false, newState };
 }
 
 // ─── Level definitions ────────────────────────────────────────────────────────

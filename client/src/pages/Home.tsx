@@ -19,6 +19,7 @@ import {
   type GameState,
   type Particle,
   type SpeechBubble,
+  type VanishStep,
   cancelGrab,
   grabChunk,
   initLevelState,
@@ -140,13 +141,14 @@ function PillarBase({ n, isBoss }: { n: number; isBoss: boolean }) {
 // ─── Tower / Container ────────────────────────────────────────────────────────
 
 function TowerContainer({
-  container, isSelected, hasChunk, onTap, isBoss,
+  container, isSelected, hasChunk, onTap, isBoss, vanishHighlightIds,
 }: {
   container: Container;
   isSelected: boolean;
   hasChunk: boolean;
   onTap: (e: React.MouseEvent) => void;
   isBoss: boolean;
+  vanishHighlightIds?: Set<string>;
 }) {
   const isEmpty = container.stack.length === 0;
   const isFull = container.stack.length >= container.capacity;
@@ -253,18 +255,34 @@ function TowerContainer({
           gap: 0,
         }}>
           <AnimatePresence>
-            {container.stack.map((item, idx) => (
-              <motion.div
-                key={item.id}
-                initial={{ scale: 0.5, opacity: 0, y: 20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.3, opacity: 0, y: -16 }}
-                transition={{ type: 'spring', stiffness: 340, damping: 24, delay: idx * 0.015 }}
-                style={{ display: 'flex', justifyContent: 'center', marginBottom: -12 }}
-              >
-                <CatImg coat={item.coat} size={CAT_SIZE} />
-              </motion.div>
-            ))}
+            {container.stack.map((item, idx) => {
+              const isVanishing = vanishHighlightIds?.has(item.id) ?? false;
+              return (
+                <motion.div
+                  key={item.id}
+                  initial={{ scale: 0.5, opacity: 0, y: 20 }}
+                  animate={isVanishing
+                    ? { scale: [1, 1.22, 0.88, 1.15, 1.05, 0], opacity: [1, 1, 1, 1, 1, 0], rotate: [0, -10, 10, -8, 6, 0], y: [0, -8, 2, -6, 2, -24] }
+                    : { scale: 1, opacity: 1, y: 0 }
+                  }
+                  exit={{ scale: 0.3, opacity: 0, y: -16 }}
+                  transition={isVanishing
+                    ? { duration: 0.65, ease: 'easeInOut' }
+                    : { type: 'spring', stiffness: 340, damping: 24, delay: idx * 0.015 }
+                  }
+                  style={{
+                    display: 'flex', justifyContent: 'center', marginBottom: -12,
+                    filter: isVanishing
+                      ? `drop-shadow(0 0 8px ${COAT_COLORS[item.coat].body}) drop-shadow(0 0 16px ${COAT_COLORS[item.coat].body})`
+                      : 'none',
+                    zIndex: isVanishing ? 5 : 'auto',
+                    position: 'relative',
+                  }}
+                >
+                  <CatImg coat={item.coat} size={CAT_SIZE} />
+                </motion.div>
+              );
+            })}
           </AnimatePresence>
         </div>
 
@@ -1198,13 +1216,14 @@ function TitleScreen({ onPlay }: { onPlay: () => void }) {
 
 // ─── Game board ───────────────────────────────────────────────────────────────
 
-function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable }: {
+function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, vanishHighlightIds }: {
   state: GameState;
   onTap: (containerId: string, e: React.MouseEvent) => void;
   onPause: () => void;
   onUndo: () => void;
   onAddMoves: () => void;
   undoAvailable: boolean;
+  vanishHighlightIds: Set<string>;
 }) {
   const cfg = state.levelConfig!;
   const isBoss = cfg.isBoss;
@@ -1242,6 +1261,7 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable }:
               hasChunk={hasChunk}
               onTap={(e: React.MouseEvent) => onTap(container.id, e)}
               isBoss={isBoss}
+              vanishHighlightIds={vanishHighlightIds}
             />
           ))}
         </div>
@@ -1269,10 +1289,14 @@ export default function Home() {
   const [completedLevels, setCompletedLevels] = useState<Record<number, number>>({});
   const [showChain, setShowChain] = useState(0);
   const [prevState, setPrevState] = useState<GameState | null>(null); // for undo
+  // Staged vanish animation
+  const [vanishHighlightIds, setVanishHighlightIds] = useState<Set<string>>(new Set());
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const chainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const msgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const animTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Auto-clear message
   useEffect(() => {
@@ -1329,20 +1353,19 @@ export default function Home() {
 
   const handleTap = useCallback((containerId: string, event: React.MouseEvent) => {
     if (!gameState || gameState.phase !== 'playing') return;
+    if (isAnimating) return; // block input during vanish sequence
 
     if (!gameState.chunk) {
       // Grab phase
       const next = grabChunk(gameState, containerId);
       if (next.chunk) {
-        // Show "mrow ~" bubble near click
         const bubble = makeBubble('mrow ~', (event.clientX ?? 160) - 30, (event.clientY ?? 300) - 50);
         setGameState({ ...next, speechBubbles: [bubble] });
       } else {
         setGameState(next);
       }
     } else {
-      // Place phase
-      // Tapping the source container → free cancel (no move cost)
+      // Place phase — free cancel on source tap
       if (containerId === gameState.chunk.sourceContainerId) {
         setGameState(cancelGrab(gameState));
         return;
@@ -1352,7 +1375,6 @@ export default function Home() {
       const result = placeChunk(gameState, containerId);
 
       if (!result.success) {
-        // Invalid placement → free cancel, show error message briefly
         const cancelled = cancelGrab(gameState);
         setGameState({ ...cancelled, message: result.error ?? 'Cannot place here!' });
         return;
@@ -1361,35 +1383,78 @@ export default function Home() {
       // Save for undo
       setPrevState(savedState);
 
-      // Particles + speech bubbles
-      const particles = result.vanishResults.length > 0
-        ? spawnParticles(event.clientX ?? 200, event.clientY ?? 350, result.vanishResults.length * 5)
-        : [];
+      // Clear any running animation timers
+      animTimersRef.current.forEach(t => clearTimeout(t));
+      animTimersRef.current = [];
 
-      const bubbles: SpeechBubble[] = [];
-      if (result.vanishResults.length > 0) {
-        bubbles.push(makeBubble('purr ♥', (event.clientX ?? 160) - 20, (event.clientY ?? 300) - 60));
+      const steps = result.vanishSteps;
+
+      if (steps.length === 0) {
+        // No vanish — apply final state immediately
+        setGameState(result.newState);
+        return;
       }
 
-      // Chain
-      const chain = result.vanishResults.length;
-      if (chain >= 2) {
-        setShowChain(chain);
-        if (chainTimerRef.current) clearTimeout(chainTimerRef.current);
-        chainTimerRef.current = setTimeout(() => setShowChain(0), 1200);
-      }
+      // ── Staged vanish sequence ────────────────────────────────────────────
+      // Timing per step: 200ms show pre-state → 550ms highlight/shake → 100ms post-state
+      const SHOW_MS = 400;   // pause to see full stack after placement
+      const SHAKE_MS = 650;  // highlight + shake animation duration
+      const GAP_MS = 120;    // brief gap before next step
+      const STEP_MS = SHOW_MS + SHAKE_MS + GAP_MS;
 
-      setGameState({ ...result.newState, particles, speechBubbles: bubbles });
+      setIsAnimating(true);
 
-      if (result.won && gameState.levelConfig) {
-        const levelId = gameState.levelConfig.id;
-        setCompletedLevels(prev => ({
-          ...prev,
-          [levelId]: Math.max(prev[levelId] ?? 0, result.newState.stars),
-        }));
-      }
+      steps.forEach((step, i) => {
+        const stepStart = i * STEP_MS;
+
+        // 1. Show pre-state (full stack including cats about to vanish)
+        const t1 = setTimeout(() => {
+          setGameState(step.preState);
+          setVanishHighlightIds(new Set());
+        }, stepStart);
+
+        // 2. Highlight the vanishing cats (glow + shake)
+        const t2 = setTimeout(() => {
+          setVanishHighlightIds(new Set(step.vanishingIds));
+        }, stepStart + SHOW_MS);
+
+        // 3. Transition to post-state (cats removed)
+        const t3 = setTimeout(() => {
+          setVanishHighlightIds(new Set());
+          setGameState(step.postState);
+          // Show chain banner for combos
+          if (i >= 1) {
+            setShowChain(i + 1);
+            if (chainTimerRef.current) clearTimeout(chainTimerRef.current);
+            chainTimerRef.current = setTimeout(() => setShowChain(0), 1200);
+          }
+          // Purr bubble on each vanish
+          const bubble = makeBubble('purr ♥', (event.clientX ?? 160) - 20, (event.clientY ?? 300) - 60);
+          setGameState(prev => prev ? { ...prev, speechBubbles: [bubble] } : prev);
+        }, stepStart + SHOW_MS + SHAKE_MS);
+
+        animTimersRef.current.push(t1, t2, t3);
+      });
+
+      // 4. After all steps, commit the final resolved state
+      const finalT = setTimeout(() => {
+        const particles = spawnParticles(event.clientX ?? 200, event.clientY ?? 350, steps.length * 5);
+        setGameState({ ...result.newState, particles });
+        setVanishHighlightIds(new Set());
+        setIsAnimating(false);
+
+        if (result.won && gameState.levelConfig) {
+          const levelId = gameState.levelConfig.id;
+          setCompletedLevels(prev => ({
+            ...prev,
+            [levelId]: Math.max(prev[levelId] ?? 0, result.newState.stars),
+          }));
+        }
+      }, steps.length * STEP_MS + 80);
+
+      animTimersRef.current.push(finalT);
     }
-  }, [gameState]);
+  }, [gameState, isAnimating]);
 
   // ── Title ──
   if (screen === 'title') {
@@ -1421,6 +1486,7 @@ export default function Home() {
         onUndo={handleUndo}
         onAddMoves={handleAddMoves}
         undoAvailable={!!prevState}
+        vanishHighlightIds={vanishHighlightIds}
       />
 
       <AnimatePresence>
