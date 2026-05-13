@@ -74,47 +74,65 @@ function CatImg({ coat, size = 52 }: { coat: CoatId; size?: number }) {
   );
 }
 
-// ─── Wooden platform ──────────────────────────────────────────────────────────
+// ─── Pillar cap (top decorative arch) ────────────────────────────────────────
 
-function WoodenPlatform({ width = 72 }: { width?: number }) {
+function PillarCap({ isBoss }: { isBoss: boolean }) {
   return (
-    <div style={{ position: 'relative', width, height: 18, marginTop: -4 }}>
-      <div style={{
-        width: '100%', height: 14,
-        background: `linear-gradient(180deg, ${C.platform} 0%, ${C.platformDark} 100%)`,
-        borderRadius: '50% / 40%',
-        boxShadow: `0 3px 0 ${C.platformDark}`,
-      }} />
-    </div>
+    <div style={{
+      width: '100%', height: 14,
+      background: isBoss
+        ? 'linear-gradient(180deg, #4A4870 0%, #3A3860 100%)'
+        : `linear-gradient(180deg, ${C.platform} 0%, ${C.platformDark} 100%)`,
+      borderRadius: '12px 12px 4px 4px',
+      boxShadow: isBoss ? '0 2px 6px rgba(0,0,0,0.4)' : `0 2px 4px ${C.platformDark}88`,
+    }} />
   );
 }
 
-// ─── N-plaque ─────────────────────────────────────────────────────────────────
+// ─── Pillar base ──────────────────────────────────────────────────────────────
 
-function NPlaque({ n }: { n: number }) {
+function PillarBase({ n, isBoss }: { n: number; isBoss: boolean }) {
   return (
     <div style={{
-      position: 'absolute',
-      right: -20,
-      top: '30%',
-      width: 28,
-      height: 32,
-      background: `linear-gradient(180deg, ${C.plaque} 0%, ${C.plaqueDark} 100%)`,
-      borderRadius: 8,
+      width: '100%',
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-      zIndex: 10,
+      gap: 0,
     }}>
-      <span style={{
-        fontFamily: 'Nunito, sans-serif',
-        fontWeight: 900,
-        fontSize: 16,
-        color: '#FFF7E1',
-        lineHeight: 1,
-        textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-      }}>{n}</span>
+      {/* Wide footing */}
+      <div style={{
+        width: '110%',
+        height: 10,
+        background: isBoss
+          ? 'linear-gradient(180deg, #3A3860 0%, #2A2848 100%)'
+          : `linear-gradient(180deg, ${C.platformDark} 0%, #8A5828 100%)`,
+        borderRadius: '4px 4px 8px 8px',
+        boxShadow: isBoss ? '0 3px 8px rgba(0,0,0,0.5)' : '0 3px 6px rgba(0,0,0,0.2)',
+      }} />
+      {/* N-grab badge */}
+      <div style={{
+        marginTop: 6,
+        width: 32, height: 32,
+        background: isBoss
+          ? 'linear-gradient(180deg, #6A68A8 0%, #4A4888 100%)'
+          : `linear-gradient(180deg, ${C.plaque} 0%, ${C.plaqueDark} 100%)`,
+        borderRadius: 10,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+        border: `1.5px solid ${isBoss ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.5)'}`,
+      }}>
+        <span style={{
+          fontFamily: 'Nunito, sans-serif',
+          fontWeight: 900,
+          fontSize: 15,
+          color: '#FFF7E1',
+          lineHeight: 1,
+          textShadow: '0 1px 2px rgba(0,0,0,0.35)',
+        }}>{n}</span>
+      </div>
     </div>
   );
 }
@@ -150,10 +168,14 @@ function TowerContainer({
     ? `${COAT_COLORS[container.coatLocked].body}22`
     : 'rgba(255,243,232,0.7)';
 
+  // PILLAR_HEIGHT: fixed height for the cat shaft — cats stack from bottom up inside it
+  const PILLAR_H = 190;
+  const CAT_SIZE = 48;
+
   return (
     <motion.div
       onClick={onTap}
-      whileTap={{ scale: 0.95 }}
+      whileTap={{ scale: 0.96 }}
       style={{
         position: 'relative',
         display: 'flex',
@@ -161,52 +183,52 @@ function TowerContainer({
         alignItems: 'center',
         cursor: 'pointer',
         userSelect: 'none',
-        minWidth: 72,
+        width: 72,
       }}
     >
-      {/* Special badges */}
+      {/* Special badges above pillar */}
       {container.frozen && (
-        <div style={{ position: 'absolute', top: -8, left: 2, fontSize: 14, zIndex: 12 }}>❄️</div>
+        <div style={{ position: 'absolute', top: -18, left: 2, fontSize: 14, zIndex: 12 }}>❄️</div>
       )}
       {container.coatLocked && (
         <div style={{
-          position: 'absolute', top: -8, right: 2, fontSize: 10, zIndex: 12,
+          position: 'absolute', top: -18, right: 2, fontSize: 9, zIndex: 12,
           background: COAT_COLORS[container.coatLocked].body,
           borderRadius: 6, padding: '1px 4px',
           color: C.brown, fontWeight: 700, fontFamily: 'Nunito, sans-serif',
         }}>
-          {COAT_COLORS[container.coatLocked].label} only
+          {COAT_COLORS[container.coatLocked].label}
         </div>
       )}
 
-      {/* Tower shaft + cats */}
+      {/* Pillar cap */}
+      <PillarCap isBoss={isBoss} />
+
+      {/* Pillar shaft — FIXED HEIGHT */}
       <motion.div
         animate={
           isSelected
-            ? { boxShadow: `0 0 0 2.5px ${C.accent}, 0 4px 20px rgba(232,116,90,0.3)` }
+            ? { boxShadow: `0 0 0 2.5px ${C.accent}, 0 6px 24px rgba(232,116,90,0.35)` }
             : canPlace
-            ? { boxShadow: `0 0 0 2px ${C.peachMid}88` }
-            : { boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }
+            ? { boxShadow: `0 0 0 2px ${C.peachMid}` }
+            : { boxShadow: '0 2px 10px rgba(0,0,0,0.10)' }
         }
         style={{
           position: 'relative',
-          width: 72,
-          minHeight: 160,
+          width: '100%',
+          height: PILLAR_H,
           background: bgColor,
           border: `2px solid ${borderColor}`,
-          borderRadius: 20,
+          borderRadius: '0 0 8px 8px',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'flex-end',
-          padding: '6px 6px 2px',
-          gap: 0,
-          overflow: 'visible',
+          alignItems: 'center',
+          padding: '4px 4px 6px',
+          overflow: 'hidden',
         }}
       >
-        {/* N-plaque */}
-        <NPlaque n={container.grabNumber} />
-
-        {/* Capacity dots */}
+        {/* Capacity dots at top */}
         <div style={{
           position: 'absolute', top: 6, left: 0, right: 0,
           display: 'flex', justifyContent: 'center', gap: 3,
@@ -215,25 +237,32 @@ function TowerContainer({
             <div key={i} style={{
               width: 5, height: 5, borderRadius: '50%',
               background: i < container.stack.length
-                ? (isBoss ? 'rgba(255,255,255,0.5)' : C.brownLight)
-                : (isBoss ? 'rgba(255,255,255,0.1)' : '#E8DCC8'),
+                ? (isBoss ? 'rgba(255,255,255,0.6)' : C.brownLight)
+                : (isBoss ? 'rgba(255,255,255,0.12)' : '#E8DCC8'),
+              transition: 'background 0.2s',
             }} />
           ))}
         </div>
 
-        {/* Cat stack */}
-        <div style={{ display: 'flex', flexDirection: 'column-reverse', alignItems: 'center', gap: 0, marginTop: 20 }}>
+        {/* Cat stack — grows upward from bottom */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column-reverse',
+          alignItems: 'center',
+          width: '100%',
+          gap: 0,
+        }}>
           <AnimatePresence>
             {container.stack.map((item, idx) => (
               <motion.div
                 key={item.id}
-                initial={{ scale: 0.6, opacity: 0, y: -16 }}
+                initial={{ scale: 0.5, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.4, opacity: 0, y: -20 }}
-                transition={{ type: 'spring', stiffness: 320, damping: 22, delay: idx * 0.02 }}
-                style={{ display: 'flex', justifyContent: 'center', marginBottom: -10 }}
+                exit={{ scale: 0.3, opacity: 0, y: -16 }}
+                transition={{ type: 'spring', stiffness: 340, damping: 24, delay: idx * 0.015 }}
+                style={{ display: 'flex', justifyContent: 'center', marginBottom: -12 }}
               >
-                <CatImg coat={item.coat} size={54} />
+                <CatImg coat={item.coat} size={CAT_SIZE} />
               </motion.div>
             ))}
           </AnimatePresence>
@@ -244,22 +273,29 @@ function TowerContainer({
           <div style={{
             position: 'absolute', inset: 0, display: 'flex',
             flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            opacity: 0.35,
+            opacity: 0.3, pointerEvents: 'none',
           }}>
-            <span style={{ fontSize: 20 }}>🐾</span>
+            <span style={{ fontSize: 22 }}>🐾</span>
             <span style={{
-              fontSize: 10, fontFamily: 'Caveat, cursive', color: isBoss ? '#fff' : C.brownMid,
-              marginTop: 2,
+              fontSize: 10, fontFamily: 'Caveat, cursive',
+              color: isBoss ? '#fff' : C.brownMid, marginTop: 2,
             }}>empty</span>
           </div>
         )}
+
+        {/* Full indicator */}
         {isFull && (
-          <div style={{ position: 'absolute', top: 4, left: 4, fontSize: 10, opacity: 0.7 }}>🔴</div>
+          <div style={{
+            position: 'absolute', top: 4, right: 4,
+            width: 8, height: 8, borderRadius: '50%',
+            background: '#E85A5A',
+            boxShadow: '0 0 4px rgba(232,90,90,0.6)',
+          }} />
         )}
       </motion.div>
 
-      {/* Wooden platform base */}
-      <WoodenPlatform width={80} />
+      {/* Pillar base + N-badge */}
+      <PillarBase n={container.grabNumber} isBoss={isBoss} />
     </motion.div>
   );
 }
@@ -531,9 +567,10 @@ function BoosterBar({
       width: '100%',
       background: bg,
       borderTop: `1.5px solid ${border}`,
-      padding: '8px 12px 10px',
+      padding: '8px 12px max(10px, env(safe-area-inset-bottom, 10px))',
       display: 'flex',
       gap: 8,
+      flexShrink: 0,
     }}>
       {boosters.map(b => (
         <motion.button
@@ -1074,7 +1111,13 @@ function TitleScreen({ onPlay }: { onPlay: () => void }) {
                   <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 13, color: '#FFF7E1' }}>{n}</span>
                 </div>
               </div>
-              <WoodenPlatform width={60} />
+              <div style={{
+                width: '110%', height: 8,
+                background: `linear-gradient(180deg, ${C.platformDark} 0%, #8A5828 100%)`,
+                borderRadius: '4px 4px 8px 8px',
+                boxShadow: '0 3px 6px rgba(0,0,0,0.18)',
+                marginTop: 2,
+              }} />
             </div>
           ))}
         </div>
@@ -1143,15 +1186,15 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable }:
     }}>
       <HUD state={state} onPause={onPause} isBoss={isBoss} />
 
-      {/* Tower area */}
+      {/* Tower area — vertically centered */}
       <div style={{
-        flex: 1, display: 'flex', alignItems: 'flex-start',
-        justifyContent: 'center', padding: '20px 8px 4px',
+        flex: 1, display: 'flex', alignItems: 'center',
+        justifyContent: 'center', padding: '8px 8px 8px',
         overflowY: 'auto',
       }}>
         <div style={{
           display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
-          gap: 12, width: '100%', maxWidth: 440,
+          gap: 14, width: '100%', maxWidth: 440,
           alignItems: 'flex-end',
         }}>
           {state.containers.map(container => (
