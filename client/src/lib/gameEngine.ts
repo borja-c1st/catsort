@@ -301,10 +301,10 @@ export function grabChunk(state: GameState, sourceId: string): GameState {
   const source = containers.find(c => c.id === sourceId);
   if (!source) return state;
   if (source.oneWayIn) return { ...state, message: 'This tower only accepts cats!' };
-  if (source.stack.length < source.grabNumber) {
-    return { ...state, message: `Need at least ${source.grabNumber} cats to grab!` };
+  if (source.stack.length < 1) {
+    return { ...state, message: 'No cats to grab!' };
   }
-  const grabbed = source.stack.splice(source.stack.length - source.grabNumber, source.grabNumber).reverse();
+  const grabbed = source.stack.splice(source.stack.length - 1, 1).reverse();
   return { ...state, containers, selectedContainerId: sourceId, chunk: { items: grabbed, sourceContainerId: sourceId }, message: null };
 }
 
@@ -404,10 +404,10 @@ export const LEVELS: LevelConfig[] = [
     starThresholds: { two: 0.3, three: 0.6 },
     triggers: [],
     containers: [
-      { id: 'c1', grabNumber: 2, capacity: 6, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'ginger'] },
-      { id: 'c2', grabNumber: 2, capacity: 6, position: { x: 1, y: 0 }, startStack: ['ginger', 'tabby', 'ginger', 'white'] },
-      { id: 'c3', grabNumber: 2, capacity: 6, position: { x: 2, y: 0 }, startStack: ['tabby', 'white', 'tabby'] },
-      { id: 'c4', grabNumber: 2, capacity: 6, position: { x: 3, y: 0 }, startStack: [] },
+      { id: 'c1', grabNumber: 1, capacity: 6, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'ginger'] },
+      { id: 'c2', grabNumber: 1, capacity: 6, position: { x: 1, y: 0 }, startStack: ['ginger', 'tabby', 'ginger', 'white'] },
+      { id: 'c3', grabNumber: 1, capacity: 6, position: { x: 2, y: 0 }, startStack: ['tabby', 'white', 'tabby'] },
+      { id: 'c4', grabNumber: 1, capacity: 6, position: { x: 3, y: 0 }, startStack: [] },
     ],
   },
   {
@@ -419,11 +419,11 @@ export const LEVELS: LevelConfig[] = [
     starThresholds: { two: 0.3, three: 0.55 },
     triggers: [],
     containers: [
-      { id: 'c1', grabNumber: 2, capacity: 8, position: { x: 0, y: 0 }, startStack: ['calico', 'white', 'tabby', 'white', 'ginger'] },
-      { id: 'c2', grabNumber: 3, capacity: 8, position: { x: 1, y: 0 }, startStack: ['tabby', 'white', 'calico', 'tabby', 'white'] },
-      { id: 'c3', grabNumber: 2, capacity: 8, position: { x: 2, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'calico'] },
-      { id: 'c4', grabNumber: 3, capacity: 8, position: { x: 3, y: 0 }, startStack: ['ginger', 'tabby', 'white', 'calico'] },
-      { id: 'c5', grabNumber: 2, capacity: 8, position: { x: 4, y: 0 }, startStack: [] },
+      { id: 'c1', grabNumber: 1, capacity: 8, position: { x: 0, y: 0 }, startStack: ['calico', 'white', 'tabby', 'white', 'ginger'] },
+      { id: 'c2', grabNumber: 1, capacity: 8, position: { x: 1, y: 0 }, startStack: ['tabby', 'white', 'calico', 'tabby', 'white'] },
+      { id: 'c3', grabNumber: 1, capacity: 8, position: { x: 2, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'calico'] },
+      { id: 'c4', grabNumber: 1, capacity: 8, position: { x: 3, y: 0 }, startStack: ['ginger', 'tabby', 'white', 'calico'] },
+      { id: 'c5', grabNumber: 1, capacity: 8, position: { x: 4, y: 0 }, startStack: [] },
     ],
   },
   {
@@ -435,11 +435,11 @@ export const LEVELS: LevelConfig[] = [
     starThresholds: { two: 0.3, three: 0.55 },
     triggers: [],
     containers: [
-      { id: 'c1', grabNumber: 2, capacity: 6, position: { x: 0, y: 0 }, startStack: ['siamese', 'calico', 'black', 'calico'] },
-      { id: 'c2', grabNumber: 2, capacity: 6, position: { x: 1, y: 0 }, startStack: ['calico', 'black', 'siamese', 'calico'] },
-      { id: 'c3', grabNumber: 2, capacity: 6, position: { x: 2, y: 0 }, startStack: ['black', 'calico', 'siamese'] },
-      { id: 'c4', grabNumber: 2, capacity: 4, position: { x: 3, y: 0 }, startStack: [], coatLocked: 'calico', isGoalContainer: true },
-      { id: 'c5', grabNumber: 2, capacity: 6, position: { x: 4, y: 0 }, startStack: [] },
+      { id: 'c1', grabNumber: 1, capacity: 6, position: { x: 0, y: 0 }, startStack: ['siamese', 'calico', 'black', 'calico'] },
+      { id: 'c2', grabNumber: 1, capacity: 6, position: { x: 1, y: 0 }, startStack: ['calico', 'black', 'siamese', 'calico'] },
+      { id: 'c3', grabNumber: 1, capacity: 6, position: { x: 2, y: 0 }, startStack: ['black', 'calico', 'siamese'] },
+      { id: 'c4', grabNumber: 1, capacity: 4, position: { x: 3, y: 0 }, startStack: [], coatLocked: 'calico', isGoalContainer: true },
+      { id: 'c5', grabNumber: 1, capacity: 6, position: { x: 4, y: 0 }, startStack: [] },
     ],
   },
   {
@@ -460,11 +460,11 @@ export const LEVELS: LevelConfig[] = [
       },
     ],
     containers: [
-      { id: 'c1', grabNumber: 3, capacity: 8, position: { x: 0, y: 0 }, startStack: ['ginger', 'siamese', 'tabby', 'black', 'siamese'] },
-      { id: 'c2', grabNumber: 2, capacity: 8, position: { x: 1, y: 0 }, startStack: ['siamese', 'calico', 'black', 'siamese', 'tabby'] },
-      { id: 'c3', grabNumber: 3, capacity: 8, position: { x: 2, y: 0 }, startStack: ['tabby', 'siamese', 'calico', 'ginger'] },
-      { id: 'c4', grabNumber: 2, capacity: 8, position: { x: 3, y: 0 }, startStack: ['black', 'siamese', 'tabby'] },
-      { id: 'c5', grabNumber: 3, capacity: 8, position: { x: 4, y: 0 }, startStack: [] },
+      { id: 'c1', grabNumber: 1, capacity: 8, position: { x: 0, y: 0 }, startStack: ['ginger', 'siamese', 'tabby', 'black', 'siamese'] },
+      { id: 'c2', grabNumber: 1, capacity: 8, position: { x: 1, y: 0 }, startStack: ['siamese', 'calico', 'black', 'siamese', 'tabby'] },
+      { id: 'c3', grabNumber: 1, capacity: 8, position: { x: 2, y: 0 }, startStack: ['tabby', 'siamese', 'calico', 'ginger'] },
+      { id: 'c4', grabNumber: 1, capacity: 8, position: { x: 3, y: 0 }, startStack: ['black', 'siamese', 'tabby'] },
+      { id: 'c5', grabNumber: 1, capacity: 8, position: { x: 4, y: 0 }, startStack: [] },
     ],
   },
   {
@@ -498,11 +498,11 @@ export const LEVELS: LevelConfig[] = [
       },
     ],
     containers: [
-      { id: 'c1', grabNumber: 3, capacity: 9, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'ginger', 'white', 'black'] },
-      { id: 'c2', grabNumber: 2, capacity: 9, position: { x: 1, y: 0 }, startStack: ['ginger', 'white', 'calico', 'ginger', 'tabby'] },
-      { id: 'c3', grabNumber: 3, capacity: 9, position: { x: 2, y: 0 }, startStack: ['tabby', 'white', 'ginger', 'black', 'calico'] },
-      { id: 'c4', grabNumber: 2, capacity: 9, position: { x: 3, y: 0 }, startStack: ['white', 'ginger', 'tabby'] },
-      { id: 'c5', grabNumber: 3, capacity: 9, position: { x: 4, y: 0 }, startStack: [] },
+      { id: 'c1', grabNumber: 1, capacity: 9, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'tabby', 'ginger', 'white', 'black'] },
+      { id: 'c2', grabNumber: 1, capacity: 9, position: { x: 1, y: 0 }, startStack: ['ginger', 'white', 'calico', 'ginger', 'tabby'] },
+      { id: 'c3', grabNumber: 1, capacity: 9, position: { x: 2, y: 0 }, startStack: ['tabby', 'white', 'ginger', 'black', 'calico'] },
+      { id: 'c4', grabNumber: 1, capacity: 9, position: { x: 3, y: 0 }, startStack: ['white', 'ginger', 'tabby'] },
+      { id: 'c5', grabNumber: 1, capacity: 9, position: { x: 4, y: 0 }, startStack: [] },
     ],
   },
 ];
