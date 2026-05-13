@@ -292,6 +292,8 @@ export interface VanishStep {
   vanishingIds: string[];
   /** coat of the vanishing run (for highlight colour) */
   coat: CoatId;
+  /** ID of the container the vanish happens in */
+  containerId: string;
   /** the container state BEFORE this step's items are removed (full stack visible) */
   preState: GameState;
   /** the container state AFTER this step's items are removed */
@@ -409,7 +411,7 @@ export function placeChunk(state: GameState, targetId: string): MoveResult {
         particles: [],
       };
 
-      vanishSteps.push({ vanishingIds, coat, preState, postState, scoreGain: stepScore });
+      vanishSteps.push({ vanishingIds, coat, containerId: targetId, preState, postState, scoreGain: stepScore });
       stepChain++;
     }
   }

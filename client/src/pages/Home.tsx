@@ -92,7 +92,7 @@ function getBedImg(containerIndex: number): string {
 // ─── Tower / Container ────────────────────────────────────────────────────────
 
 function TowerContainer({
-  container, containerIndex, isSelected, hasChunk, onTap, isBoss, vanishHighlightIds,
+  container, containerIndex, isSelected, hasChunk, onTap, isBoss, vanishHighlightIds, catItemRefs,
 }: {
   container: Container;
   containerIndex: number;
@@ -101,6 +101,7 @@ function TowerContainer({
   onTap: (e: React.MouseEvent, towerCenterX: number, towerCenterY: number) => void;
   isBoss: boolean;
   vanishHighlightIds?: Set<string>;
+  catItemRefs?: React.MutableRefObject<Map<string, HTMLElement>>;
 }) {
   const isEmpty = container.stack.length === 0;
   const canPlace = hasChunk && !container.oneWayOut;
@@ -185,6 +186,10 @@ function TowerContainer({
               return (
                 <motion.div
                   key={item.id}
+                  ref={(el) => {
+                    if (el) catItemRefs?.current.set(item.id, el as HTMLElement);
+                    else catItemRefs?.current.delete(item.id);
+                  }}
                   initial={{ scale: 0.5, opacity: 0, y: 20 }}
                   animate={isVanishing
                     ? { scale: [1, 1.3, 0], opacity: [1, 1, 0], y: [0, -10, -10] }
@@ -1197,7 +1202,7 @@ function TitleScreen({ onPlay }: { onPlay: () => void }) {
 
 // ─── Game board ───────────────────────────────────────────────────────────────
 
-function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, vanishHighlightIds }: {
+function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, vanishHighlightIds, catItemRefs }: {
   state: GameState;
   onTap: (containerId: string, e: React.MouseEvent, towerCenterX: number, towerCenterY: number) => void;
   onPause: () => void;
@@ -1205,6 +1210,7 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, v
   onAddMoves: () => void;
   undoAvailable: boolean;
   vanishHighlightIds: Set<string>;
+  catItemRefs: React.MutableRefObject<Map<string, HTMLElement>>;
 }) {
   const cfg = state.levelConfig!;
   const isBoss = cfg.isBoss;
@@ -1244,6 +1250,7 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, v
               onTap={(e: React.MouseEvent, cx: number, cy: number) => onTap(container.id, e, cx, cy)}
               isBoss={isBoss}
               vanishHighlightIds={vanishHighlightIds}
+              catItemRefs={catItemRefs}
             />
           ))}
         </div>
@@ -1279,6 +1286,8 @@ export default function Home() {
   const msgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bubbleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const animTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Map of item-id → DOM element for computing vanish midpoint
+  const catItemRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   // Auto-clear message
   useEffect(() => {
@@ -1305,7 +1314,7 @@ export default function Home() {
     if (gameState?.particles.length) {
       const t = setTimeout(() => {
         setGameState(prev => prev ? { ...prev, particles: [] } : prev);
-      }, 900);
+      }, 2500);
       return () => clearTimeout(t);
     }
   }, [gameState?.particles]);
@@ -1332,6 +1341,17 @@ export default function Home() {
       message: '+5 moves added!',
     } : prev);
   }, []);
+
+  /** Compute screen midpoint of a set of item IDs from their DOM nodes */
+  const getVanishMidpoint = (ids: string[]): { x: number; y: number } => {
+    const rects = ids
+      .map(id => catItemRefs.current.get(id)?.getBoundingClientRect())
+      .filter((r): r is DOMRect => !!r);
+    if (!rects.length) return { x: 200, y: 350 };
+    const avgX = rects.reduce((s, r) => s + r.left + r.width / 2, 0) / rects.length;
+    const avgY = rects.reduce((s, r) => s + r.top + r.height / 2, 0) / rects.length;
+    return { x: avgX, y: avgY };
+  };
 
   const handleTap = useCallback((containerId: string, event: React.MouseEvent, towerCenterX = 200, towerCenterY = 350) => {
     if (!gameState || gameState.phase !== 'playing') return;
@@ -1383,10 +1403,10 @@ export default function Home() {
       }
 
       // ── Staged vanish sequence ────────────────────────────────────────────
-      // Timing per step: 150ms show pre-state → 350ms highlight → hearts burst
-      const SHOW_MS = 150;   // brief pause after placement before highlight
-      const SHAKE_MS = 350;  // highlight duration before hearts fire
-      const GAP_MS = 80;     // gap before next chain step
+      // Timing: 120ms settle → 300ms glow highlight → hearts burst → 300ms gap (new cats visible)
+      const SHOW_MS = 120;   // brief settle after placement
+      const SHAKE_MS = 300;  // glow highlight before cats pop
+      const GAP_MS = 300;    // pause AFTER vanish so chain cats are visible before next step
       const STEP_MS = SHOW_MS + SHAKE_MS + GAP_MS;
 
       setIsAnimating(true);
@@ -1408,10 +1428,11 @@ export default function Home() {
         // 3. Transition to post-state (cats removed) + hearts explosion
         const t3 = setTimeout(() => {
           setVanishHighlightIds(new Set());
-          // Spawn hearts burst at the tap location for each vanish step
-          const heartCount = 10 + step.vanishingIds.length * 2;
-          const hearts = spawnParticles(towerCenterX, towerCenterY, heartCount);
-          setGameState(prev => prev ? { ...step.postState, particles: [...(prev.particles ?? []), ...hearts] } : step.postState);
+          // Spawn hearts from the midpoint of the vanishing cats' DOM positions
+          const mid = getVanishMidpoint(step.vanishingIds);
+          const heartCount = 8 + step.vanishingIds.length * 3;
+          const hearts = spawnParticles(mid.x, mid.y, heartCount);
+          setGameState(prev => prev ? { ...step.postState, particles: hearts } : step.postState);
           // Show chain banner for combos
           if (i >= 1) {
             setShowChain(i + 1);
@@ -1476,6 +1497,7 @@ export default function Home() {
         onAddMoves={handleAddMoves}
         undoAvailable={!!prevState}
         vanishHighlightIds={vanishHighlightIds}
+        catItemRefs={catItemRefs}
       />
 
       <AnimatePresence>
