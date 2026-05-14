@@ -1433,42 +1433,40 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
         zIndex: 10,
         padding: '0 16px',
       }}>
-        {/* Coins + Gems pill */}
+        {/* Coins pill */}
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 0,
+          display: 'flex', alignItems: 'center', gap: 4,
           background: 'rgba(255,255,255,0.88)',
           borderRadius: 999,
           boxShadow: '0 3px 16px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.9) inset',
-          border: '1.5px solid rgba(255,200,160,0.6)',
-          overflow: 'hidden',
+          border: '1.5px solid rgba(255,200,130,0.7)',
+          padding: '6px 12px 6px 10px',
         }}>
-          {/* Coins */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            padding: '6px 12px 6px 10px',
-            borderRight: '1px solid rgba(255,180,130,0.35)',
-          }}>
-            <span style={{ fontSize: 18, lineHeight: 1 }}>🪙</span>
-            <span style={{ fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 15, color: '#7A4A10', letterSpacing: 0.3, fontWeight: 700 }}>1,240</span>
-            <span style={{
-              fontSize: 11, color: '#E8745A', fontWeight: 900,
-              background: 'rgba(232,116,90,0.12)', borderRadius: 999,
-              padding: '1px 5px', marginLeft: 2,
-            }}>+</span>
-          </div>
-          {/* Gems */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            padding: '6px 12px 6px 10px',
-          }}>
-            <span style={{ fontSize: 18, lineHeight: 1 }}>💎</span>
-            <span style={{ fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 15, color: '#4A3A8A', letterSpacing: 0.3, fontWeight: 700 }}>48</span>
-            <span style={{
-              fontSize: 11, color: '#7B6FD0', fontWeight: 900,
-              background: 'rgba(123,111,208,0.12)', borderRadius: 999,
-              padding: '1px 5px', marginLeft: 2,
-            }}>+</span>
-          </div>
+          <span style={{ fontSize: 18, lineHeight: 1 }}>🪙</span>
+          <span style={{ fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 15, color: '#7A4A10', letterSpacing: 0.3, fontWeight: 700 }}>1,240</span>
+          <span style={{
+            fontSize: 11, color: '#E8745A', fontWeight: 900,
+            background: 'rgba(232,116,90,0.15)', borderRadius: 999,
+            padding: '1px 6px', marginLeft: 2,
+          }}>+</span>
+        </div>
+
+        {/* Gems pill */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          background: 'rgba(255,255,255,0.88)',
+          borderRadius: 999,
+          boxShadow: '0 3px 16px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.9) inset',
+          border: '1.5px solid rgba(180,160,240,0.7)',
+          padding: '6px 12px 6px 10px',
+        }}>
+          <span style={{ fontSize: 18, lineHeight: 1 }}>💎</span>
+          <span style={{ fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 15, color: '#4A3A8A', letterSpacing: 0.3, fontWeight: 700 }}>48</span>
+          <span style={{
+            fontSize: 11, color: '#7B6FD0', fontWeight: 900,
+            background: 'rgba(123,111,208,0.15)', borderRadius: 999,
+            padding: '1px 6px', marginLeft: 2,
+          }}>+</span>
         </div>
 
         {/* Lives pill — separate */}
