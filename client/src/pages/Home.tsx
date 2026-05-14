@@ -395,7 +395,7 @@ function FloatingChunk({ chunk }: { chunk: NonNullable<GameState['chunk']> }) {
         filter: 'drop-shadow(0 4px 12px rgba(232,116,90,0.45))',
       }}
     >
-      {[...chunk.items].reverse().map((item, i) => (
+      {chunk.items.map((item, i) => (
         <motion.div
           key={item.id}
           animate={{
