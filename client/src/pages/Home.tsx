@@ -364,9 +364,14 @@ function FloatingChunk({ chunk }: { chunk: NonNullable<GameState['chunk']> }) {
     };
   }, []);
 
-  // Offset so the cluster appears above-left of the finger/cursor
-  const offsetX = -28;
-  const offsetY = -28;
+  const CAT_SIZE = 44;
+  const CAT_GAP = 2;
+  // Stack height so we can offset upward from the finger
+  const stackH = chunk.items.length * (CAT_SIZE + CAT_GAP);
+
+  // Offset: center horizontally on finger, stack rises above finger
+  const offsetX = -(CAT_SIZE / 2);
+  const offsetY = -(stackH + 16); // 16px above the bottom of the stack
 
   const x = pos ? pos.x + offsetX : window.innerWidth / 2;
   const y = pos ? pos.y + offsetY : 90;
@@ -384,9 +389,9 @@ function FloatingChunk({ chunk }: { chunk: NonNullable<GameState['chunk']> }) {
         zIndex: 60,
         pointerEvents: 'none',
         display: 'flex',
-        gap: chunk.items.length > 2 ? 2 : 4,
+        flexDirection: 'column-reverse', // bottom cat first (matches tower order)
+        gap: CAT_GAP,
         alignItems: 'center',
-        justifyContent: 'center',
         filter: 'drop-shadow(0 4px 12px rgba(232,116,90,0.45))',
       }}
     >
@@ -394,7 +399,7 @@ function FloatingChunk({ chunk }: { chunk: NonNullable<GameState['chunk']> }) {
         <motion.div
           key={item.id}
           animate={{
-            y: [0, -10, 2, -7, 0],
+            x: [0, i % 2 === 0 ? 6 : -6, 0, i % 2 === 0 ? 4 : -4, 0],
             rotate: [0, i % 2 === 0 ? 12 : -12, 0, i % 2 === 0 ? 8 : -8, 0],
             scale: [1, 1.08, 0.95, 1.04, 1],
           }}
@@ -405,7 +410,7 @@ function FloatingChunk({ chunk }: { chunk: NonNullable<GameState['chunk']> }) {
             delay: i * 0.07,
           }}
         >
-          <CatImg coat={item.coat} size={46} />
+          <CatImg coat={item.coat} size={CAT_SIZE} />
         </motion.div>
       ))}
     </motion.div>
