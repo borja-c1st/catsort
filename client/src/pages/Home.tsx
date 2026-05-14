@@ -1524,82 +1524,71 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
         paddingTop: 80, paddingBottom: 20,
         gap: 0, position: 'relative', zIndex: 1,
       }}>
-        {/* Game title */}
+        {/* ── Cat-letter logo: "CatSort" spelled with cats on 2 rows ── */}
+        {/*
+          Row 1: C-A-T  (3 cats)
+          Row 2: S-O-R-T (4 cats)
+          Each cat has its letter label beneath it.
+        */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 160, damping: 16 }}
-          style={{ textAlign: 'center', marginBottom: 8, position: 'relative', zIndex: 1 }}
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 140, damping: 14 }}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, marginBottom: 28 }}
         >
+          {/* Row 1: C A T */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            {(['C','A','T'] as const).map((letter, i) => {
+              const coats: CoatId[] = ['ginger','white','calico'];
+              return (
+                <motion.div
+                  key={letter}
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.6, delay: i * 0.18, ease: 'easeInOut' }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
+                >
+                  <CatImg coat={coats[i]} size={58} />
+                  <span style={{
+                    fontFamily: 'Fredoka One, Nunito, sans-serif',
+                    fontSize: 22, fontWeight: 700,
+                    color: '#FFFFFF',
+                    textShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                    lineHeight: 1,
+                  }}>{letter}</span>
+                </motion.div>
+              );
+            })}
+          </div>
+          {/* Row 2: S O R T */}
+          <div style={{ display: 'flex', gap: 6 }}>
+            {(['S','O','R','T'] as const).map((letter, i) => {
+              const coats: CoatId[] = ['tabby','siamese','black','ginger'];
+              return (
+                <motion.div
+                  key={letter}
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.6, delay: 0.54 + i * 0.18, ease: 'easeInOut' }}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
+                >
+                  <CatImg coat={coats[i]} size={58} />
+                  <span style={{
+                    fontFamily: 'Fredoka One, Nunito, sans-serif',
+                    fontSize: 22, fontWeight: 700,
+                    color: '#FFFFFF',
+                    textShadow: '0 2px 8px rgba(0,0,0,0.35)',
+                    lineHeight: 1,
+                  }}>{letter}</span>
+                </motion.div>
+              );
+            })}
+          </div>
+          {/* Tagline */}
           <div style={{
-            fontFamily: 'Fredoka One, Nunito, sans-serif',
-            fontSize: 58, lineHeight: 1,
-            color: '#FFFFFF',
-            textShadow: '0 4px 0 rgba(0,0,0,0.25), 0 8px 32px rgba(0,0,0,0.2)',
-            letterSpacing: 2,
-          }}>CatSort</div>
-          <div style={{
-            fontFamily: 'Caveat, cursive', fontSize: 20,
-            color: 'rgba(255,255,255,0.85)', marginTop: 2,
+            fontFamily: 'Caveat, cursive', fontSize: 18,
+            color: 'rgba(255,255,255,0.8)', marginTop: 4,
             textShadow: '0 1px 4px rgba(0,0,0,0.2)',
           }}>Stack · Sort · Vanish!</div>
         </motion.div>
-
-        {/* Bouncing cat parade */}
-        <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 16 }}>
-          {(['ginger', 'white', 'calico', 'tabby', 'siamese', 'black'] as CoatId[]).map((c, i) => (
-            <motion.div
-              key={c}
-              animate={{ y: [0, -12, 0], rotate: [0, i % 2 === 0 ? 5 : -5, 0] }}
-              transition={{ repeat: Infinity, duration: 1.4, delay: i * 0.15, ease: 'easeInOut' }}
-            >
-              <CatImg coat={c} size={52} />
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Decorative mini towers */}
-        <div style={{
-          display: 'flex', gap: 18, alignItems: 'flex-end',
-          background: 'rgba(255,255,255,0.18)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderRadius: 28, padding: '18px 28px 14px',
-          border: '1.5px solid rgba(255,255,255,0.35)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-          marginBottom: 28, position: 'relative', zIndex: 1,
-        }}>
-          {[
-            { cats: ['ginger', 'ginger'] as CoatId[], n: 2 },
-            { cats: ['tabby', 'calico', 'tabby'] as CoatId[], n: 3 },
-            { cats: ['white', 'white'] as CoatId[], n: 2 },
-          ].map(({ cats, n }, ti) => (
-            <div key={ti} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ display: 'flex', flexDirection: 'column-reverse', gap: 1 }}>
-                {cats.map((coat, ci) => (
-                  <motion.div
-                    key={ci}
-                    animate={{ y: [0, -3, 0] }}
-                    transition={{ repeat: Infinity, duration: 2, delay: ti * 0.3 + ci * 0.1, ease: 'easeInOut' }}
-                  >
-                    <CatImg coat={coat} size={40} />
-                  </motion.div>
-                ))}
-              </div>
-              {/* Bed base */}
-              <div style={{
-                width: 52, height: 14,
-                background: `linear-gradient(180deg, ${C.platform} 0%, ${C.platformDark} 100%)`,
-                borderRadius: '6px 6px 10px 10px',
-                boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-                display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-                paddingRight: 4,
-              }}>
-                <span style={{ fontFamily: 'Fredoka One, sans-serif', fontSize: 10, color: '#FFF7E1', fontWeight: 700 }}>{n}</span>
-              </div>
-            </div>
-          ))}
-        </div>
 
         {/* Level N play button — big, bottom of hero */}
         <motion.button
@@ -1611,13 +1600,13 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
             width: 'calc(100% - 48px)', maxWidth: 320,
             padding: '18px 24px',
             borderRadius: 999,
-            background: `linear-gradient(135deg, #FF8C42 0%, #E8745A 50%, #D45A3A 100%)`,
+            background: `linear-gradient(135deg, #3DD68C 0%, #22C55E 50%, #16A34A 100%)`,
             color: '#fff',
             fontFamily: 'Fredoka One, Nunito, sans-serif',
             fontSize: 22,
             fontWeight: 700,
             border: 'none', cursor: 'pointer',
-            boxShadow: '0 6px 0 #A83020, 0 10px 32px rgba(232,116,90,0.45)',
+            boxShadow: '0 6px 0 #15803D, 0 10px 32px rgba(34,197,94,0.45)',
             letterSpacing: 0.5,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
           }}
