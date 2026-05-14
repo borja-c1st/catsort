@@ -1418,7 +1418,7 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
 
   const handleTabPress = (id: string) => {
     if (id === 'home') { setActiveTab(id); return; }
-    if (id === 'saga') { onPlay(); return; }
+    if (id === 'saga') { setActiveTab('home'); return; } // saga removed
     setActiveTab(id);
   };
 
@@ -1948,7 +1948,7 @@ export default function Home() {
 
   // ── Title ──
   if (screen === 'title') {
-    return <TitleScreen onPlay={() => setScreen('worldMap')} completedLevels={completedLevels} />;
+    return <TitleScreen onPlay={() => { const idx = Math.min(Object.keys(completedLevels).length, LEVELS.length - 1); startLevel(idx); setScreen('playing'); }} completedLevels={completedLevels} />;
   }
 
   // ── World map ──
@@ -1995,19 +1995,19 @@ export default function Home() {
             state={gameState}
             onNext={() => startLevel(gameState.currentLevelIndex + 1)}
             onReplay={() => startLevel(gameState.currentLevelIndex)}
-            onMenu={() => setScreen('worldMap')}
+            onMenu={() => setScreen('title')}
           />
         )}
-        {gameState.phase === 'levelFail' && (
+        {screen === 'playing' && gameState?.phase === 'levelFail' && (
           <LevelFailOverlay
             onReplay={() => startLevel(gameState.currentLevelIndex)}
-            onMenu={() => setScreen('worldMap')}
+            onMenu={() => setScreen('title')}
           />
         )}
         {screen === 'paused' && (
           <PauseOverlay
             onResume={() => setScreen('playing')}
-            onMenu={() => setScreen('worldMap')}
+            onMenu={() => setScreen('title')}
             isBoss={isBoss}
           />
         )}
