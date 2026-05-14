@@ -532,11 +532,12 @@ export const LEVELS: LevelConfig[] = [
     goalCoats: ['calico', 'tabby'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 28 },
     starThresholds: { two: 0.3, three: 0.55 },
-    // After first vanish: rain 2 calico into c1 and 3 tabby into c2
-    // c1 and c2 will be partially emptied by the time the first vanish fires
+    // After first vanish: interleave calico/tabby/ginger across all 4 towers — no two same-coat in same tower
     triggers: [
-      { event: 'onVanishComplete', condition: { vanishesCompleted: 1 }, action: { type: 'spawnItems', containerId: 'c1', items: [{ id: 'rain_c1', coat: 'calico' }, { id: 'rain_c2', coat: 'calico' }] } },
-      { event: 'onVanishComplete', condition: { vanishesCompleted: 1 }, action: { type: 'spawnItems', containerId: 'c2', items: [{ id: 'rain_t1', coat: 'tabby' }, { id: 'rain_t2', coat: 'tabby' }, { id: 'rain_t3', coat: 'tabby' }] } },
+      { event: 'onVanishComplete', condition: { vanishesCompleted: 1 }, action: { type: 'spawnItems', containerId: 'c1', items: [{ id: 'rain_c1', coat: 'calico' }] } },
+      { event: 'onVanishComplete', condition: { vanishesCompleted: 1 }, action: { type: 'spawnItems', containerId: 'c2', items: [{ id: 'rain_t1', coat: 'tabby' }] } },
+      { event: 'onVanishComplete', condition: { vanishesCompleted: 1 }, action: { type: 'spawnItems', containerId: 'c3', items: [{ id: 'rain_g1', coat: 'ginger' }, { id: 'rain_c2', coat: 'calico' }] } },
+      { event: 'onVanishComplete', condition: { vanishesCompleted: 1 }, action: { type: 'spawnItems', containerId: 'c4', items: [{ id: 'rain_t2', coat: 'tabby' }, { id: 'rain_g2', coat: 'ginger' }] } },
     ],
     // Verified solvable in 4 moves (BFS confirmed):
     // Move 1: grab 2 from C1 [calico,tabby] → C3
