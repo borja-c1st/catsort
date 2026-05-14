@@ -29,12 +29,12 @@ import {
 // ─── Cat image URLs ───────────────────────────────────────────────────────────
 
 const CAT_IMGS: Record<CoatId, string> = {
-  ginger:  '/manus-storage/ginger_0340cade.png',
-  white:   '/manus-storage/white_b12276c1.png',
-  black:   '/manus-storage/black_3bc1a94e.png',
-  tabby:   '/manus-storage/tabby_68f506a3.png',
-  calico:  '/manus-storage/calico_a0255629.png',
-  siamese: '/manus-storage/siamese_2ffcf313.png',
+  ginger:  '/assets/ginger.png',
+  white:   '/assets/white.png',
+  black:   '/assets/black.png',
+  tabby:   '/assets/tabby.png',
+  calico:  '/assets/calico.png',
+  siamese: '/assets/siamese.png',
 };
 
 // ─── Design tokens ────────────────────────────────────────────────────────────
@@ -78,11 +78,11 @@ function CatImg({ coat, size = 52 }: { coat: CoatId; size?: number }) {
 // ─── Bed images for tower bases ───────────────────────────────────────────────
 
 const BED_IMGS = [
-  '/manus-storage/bed-basket_ad0f8354.png',
-  '/manus-storage/bed-cloud_3ec0a9b1.png',
-  '/manus-storage/bed-cushion_844d0e39.png',
-  '/manus-storage/bed-donut_d412fb1f.png',
-  '/manus-storage/bed-box_5e2246b7.png',
+  '/assets/bed-basket.png',
+  '/assets/bed-cloud.png',
+  '/assets/bed-cushion.png',
+  '/assets/bed-donut.png',
+  '/assets/bed-box.png',
 ];
 
 function getBedImg(containerIndex: number): string {
