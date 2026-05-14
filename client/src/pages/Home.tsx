@@ -1389,119 +1389,257 @@ function WorldMap({ onSelect, completedLevels, onBack }: {
   );
 }
 
-// ─── Title screen ─────────────────────────────────────────────────────────────
+// ─── Lobby footer tab bar ─────────────────────────────────────────────────────
 
-function TitleScreen({ onPlay }: { onPlay: () => void }) {
+const FOOTER_TABS = [
+  { id: 'shop',     icon: '🛍️',  label: 'Shop'     },
+  { id: 'saga',     icon: '🗺️',  label: 'Saga'     },
+  { id: 'home',     icon: '🏠',  label: 'Home'     },
+  { id: 'diary',    icon: '📖',  label: 'Diary'    },
+  { id: 'settings', icon: '⚙️',  label: 'Settings' },
+] as const;
+
+// ─── Title screen / Lobby ─────────────────────────────────────────────────────
+
+function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; completedLevels: Record<number, number> }) {
+  const [activeTab, setActiveTab] = useState<string>('home');
+
+  // Find the next level to play (first incomplete, or last level)
+  const nextLevelIdx = Math.min(
+    Object.keys(completedLevels).length,
+    LEVELS.length - 1
+  );
+  const nextLevel = LEVELS[nextLevelIdx];
+
+  const handleTabPress = (id: string) => {
+    if (id === 'home') { setActiveTab(id); return; }
+    if (id === 'saga') { onPlay(); return; }
+    setActiveTab(id);
+  };
+
   return (
     <div style={{
-      minHeight: '100vh',
-      background: `linear-gradient(180deg, ${C.peach} 0%, ${C.cream} 60%, ${C.peach} 100%)`,
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '0 24px',
+      height: '100dvh', maxWidth: 480, margin: '0 auto',
+      background: `linear-gradient(180deg, #FFD6F0 0%, #FFF0E8 35%, #E8F4FF 70%, #F0FFE8 100%)`,
+      display: 'flex', flexDirection: 'column',
+      overflow: 'hidden',
+      position: 'relative',
     }}>
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 120, damping: 14 }}
-        style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, width: '100%', maxWidth: 340 }}
-      >
-        {/* Cat parade */}
-        <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-          {(['ginger', 'white', 'black', 'tabby', 'calico', 'siamese'] as CoatId[]).map((c, i) => (
+
+      {/* ── Currency pills — floating top center, no header bar ── */}
+      <div style={{
+        position: 'absolute', top: 16, left: 0, right: 0,
+        display: 'flex', justifyContent: 'center', gap: 8,
+        zIndex: 10,
+        padding: '0 16px',
+      }}>
+        {/* Coins + Gems pill */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 0,
+          background: 'rgba(255,255,255,0.88)',
+          borderRadius: 999,
+          boxShadow: '0 3px 16px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.9) inset',
+          border: '1.5px solid rgba(255,200,160,0.6)',
+          overflow: 'hidden',
+        }}>
+          {/* Coins */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '6px 12px 6px 10px',
+            borderRight: '1px solid rgba(255,180,130,0.35)',
+          }}>
+            <span style={{ fontSize: 18, lineHeight: 1 }}>🪙</span>
+            <span style={{ fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 15, color: '#7A4A10', letterSpacing: 0.3, fontWeight: 700 }}>1,240</span>
+            <span style={{
+              fontSize: 11, color: '#E8745A', fontWeight: 900,
+              background: 'rgba(232,116,90,0.12)', borderRadius: 999,
+              padding: '1px 5px', marginLeft: 2,
+            }}>+</span>
+          </div>
+          {/* Gems */}
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 4,
+            padding: '6px 12px 6px 10px',
+          }}>
+            <span style={{ fontSize: 18, lineHeight: 1 }}>💎</span>
+            <span style={{ fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 15, color: '#4A3A8A', letterSpacing: 0.3, fontWeight: 700 }}>48</span>
+            <span style={{
+              fontSize: 11, color: '#7B6FD0', fontWeight: 900,
+              background: 'rgba(123,111,208,0.12)', borderRadius: 999,
+              padding: '1px 5px', marginLeft: 2,
+            }}>+</span>
+          </div>
+        </div>
+
+        {/* Lives pill — separate */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 4,
+          background: 'rgba(255,255,255,0.88)',
+          borderRadius: 999,
+          boxShadow: '0 3px 16px rgba(0,0,0,0.12), 0 1px 0 rgba(255,255,255,0.9) inset',
+          border: '1.5px solid rgba(255,160,180,0.6)',
+          padding: '6px 14px 6px 10px',
+        }}>
+          <span style={{ fontSize: 18, lineHeight: 1 }}>❤️</span>
+          <span style={{ fontFamily: 'Fredoka One, Nunito, sans-serif', fontSize: 15, color: '#C83060', letterSpacing: 0.3, fontWeight: 700 }}>5</span>
+        </div>
+      </div>
+
+      {/* ── Hero area ── */}
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        paddingTop: 80, paddingBottom: 20,
+        gap: 0,
+      }}>
+        {/* Game title */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 160, damping: 16 }}
+          style={{ textAlign: 'center', marginBottom: 8 }}
+        >
+          <div style={{
+            fontFamily: 'Fredoka One, Nunito, sans-serif',
+            fontSize: 54, lineHeight: 1,
+            color: '#3A2A25',
+            textShadow: '0 4px 0 rgba(232,116,90,0.3), 0 8px 24px rgba(232,116,90,0.15)',
+            letterSpacing: 1,
+          }}>CatSort</div>
+          <div style={{
+            fontFamily: 'Caveat, cursive', fontSize: 20,
+            color: C.brownMid, marginTop: 2,
+          }}>Stack · Sort · Vanish!</div>
+        </motion.div>
+
+        {/* Bouncing cat parade */}
+        <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 16 }}>
+          {(['ginger', 'white', 'calico', 'tabby', 'siamese', 'black'] as CoatId[]).map((c, i) => (
             <motion.div
               key={c}
-              animate={{ y: [0, -8, 0] }}
-              transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.18, ease: 'easeInOut' }}
+              animate={{ y: [0, -12, 0], rotate: [0, i % 2 === 0 ? 5 : -5, 0] }}
+              transition={{ repeat: Infinity, duration: 1.4, delay: i * 0.15, ease: 'easeInOut' }}
             >
-              <CatImg coat={c} size={46} />
+              <CatImg coat={c} size={52} />
             </motion.div>
           ))}
         </div>
 
-        {/* Title */}
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 48,
-            color: C.brown,
-            textShadow: `0 3px 12px rgba(232,116,90,0.25)`,
-            lineHeight: 1,
-          }}>CatSort</div>
-          <div style={{
-            fontFamily: 'Caveat, cursive', fontSize: 20,
-            color: C.brownMid, marginTop: 4,
-          }}>Stack · Sort · Vanish!</div>
-        </div>
-
-        {/* Wooden tower preview */}
+        {/* Decorative mini towers */}
         <div style={{
-          display: 'flex', gap: 12, alignItems: 'flex-end',
-          background: 'rgba(255,255,255,0.6)',
-          borderRadius: 24, padding: '16px 20px',
-          border: `1.5px solid ${C.peachMid}`,
+          display: 'flex', gap: 18, alignItems: 'flex-end',
+          background: 'rgba(255,255,255,0.55)',
+          borderRadius: 28, padding: '18px 28px 14px',
+          border: '2px solid rgba(255,200,170,0.5)',
+          boxShadow: '0 8px 32px rgba(232,116,90,0.12)',
+          marginBottom: 28,
         }}>
           {[
-            { coat: 'ginger' as CoatId, n: 2 },
-            { coat: 'white' as CoatId, n: 3 },
-            { coat: 'tabby' as CoatId, n: 2 },
-          ].map(({ coat, n }) => (
-            <div key={coat} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-              <div style={{ position: 'relative' }}>
-                <CatImg coat={coat} size={44} />
-                <CatImg coat={coat} size={44} />
-                <div style={{
-                  position: 'absolute', right: -14, top: '20%',
-                  width: 22, height: 26,
-                  background: `linear-gradient(180deg, ${C.plaque} 0%, ${C.plaqueDark} 100%)`,
-                  borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                }}>
-                  <span style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 13, color: '#FFF7E1' }}>{n}</span>
-                </div>
+            { cats: ['ginger', 'ginger'] as CoatId[], n: 2 },
+            { cats: ['tabby', 'calico', 'tabby'] as CoatId[], n: 3 },
+            { cats: ['white', 'white'] as CoatId[], n: 2 },
+          ].map(({ cats, n }, ti) => (
+            <div key={ti} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column-reverse', gap: 1 }}>
+                {cats.map((coat, ci) => (
+                  <motion.div
+                    key={ci}
+                    animate={{ y: [0, -3, 0] }}
+                    transition={{ repeat: Infinity, duration: 2, delay: ti * 0.3 + ci * 0.1, ease: 'easeInOut' }}
+                  >
+                    <CatImg coat={coat} size={40} />
+                  </motion.div>
+                ))}
               </div>
+              {/* Bed base */}
               <div style={{
-                width: '110%', height: 8,
-                background: `linear-gradient(180deg, ${C.platformDark} 0%, #8A5828 100%)`,
-                borderRadius: '4px 4px 8px 8px',
-                boxShadow: '0 3px 6px rgba(0,0,0,0.18)',
-                marginTop: 2,
-              }} />
+                width: 52, height: 14,
+                background: `linear-gradient(180deg, ${C.platform} 0%, ${C.platformDark} 100%)`,
+                borderRadius: '6px 6px 10px 10px',
+                boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+                paddingRight: 4,
+              }}>
+                <span style={{ fontFamily: 'Fredoka One, sans-serif', fontSize: 10, color: '#FFF7E1', fontWeight: 700 }}>{n}</span>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* How to play */}
-        <div style={{
-          width: '100%', background: 'rgba(255,255,255,0.7)',
-          borderRadius: 18, padding: '12px 16px',
-          border: `1.5px solid ${C.peachMid}`,
-        }}>
-          <div style={{ fontFamily: 'Nunito, sans-serif', fontWeight: 800, fontSize: 13, color: C.brown, marginBottom: 6 }}>How to Play</div>
-          {[
-            '1. Tap a tower to grab its top N cats',
-            '2. Tap another tower to place them',
-            '3. K+ same-coat cats in a row vanish!',
-            '4. Clear all goal-coat cats to win 🐾',
-          ].map(t => (
-            <div key={t} style={{ fontFamily: 'Caveat, cursive', fontSize: 15, color: C.brownMid, lineHeight: 1.7 }}>{t}</div>
-          ))}
-        </div>
-
+        {/* Level N play button — big, bottom of hero */}
         <motion.button
-          whileTap={{ scale: 0.95 }}
+          whileTap={{ scale: 0.94 }}
+          animate={{ scale: [1, 1.03, 1] }}
+          transition={{ repeat: Infinity, duration: 2.2, ease: 'easeInOut' }}
           onClick={onPlay}
           style={{
-            width: '100%', padding: '16px',
-            borderRadius: 24,
-            background: `linear-gradient(135deg, ${C.accent}, #C85040)`,
+            width: 'calc(100% - 48px)', maxWidth: 320,
+            padding: '18px 24px',
+            borderRadius: 999,
+            background: `linear-gradient(135deg, #FF8C42 0%, #E8745A 50%, #D45A3A 100%)`,
             color: '#fff',
-            fontFamily: 'Nunito, sans-serif', fontWeight: 900, fontSize: 20,
+            fontFamily: 'Fredoka One, Nunito, sans-serif',
+            fontSize: 22,
+            fontWeight: 700,
             border: 'none', cursor: 'pointer',
-            boxShadow: `0 6px 24px rgba(232,116,90,0.45)`,
+            boxShadow: '0 6px 0 #A83020, 0 10px 32px rgba(232,116,90,0.45)',
+            letterSpacing: 0.5,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
           }}
         >
-          Play Now! 🐾
+          <span>▶</span>
+          <span>Level {nextLevel.id}</span>
+          <span style={{ fontSize: 16, opacity: 0.85 }}>🐾</span>
         </motion.button>
-      </motion.div>
+      </div>
+
+      {/* ── Footer tab bar ── */}
+      <div style={{
+        flexShrink: 0,
+        background: 'rgba(255,255,255,0.95)',
+        borderTop: '2px solid rgba(255,200,170,0.5)',
+        boxShadow: '0 -4px 24px rgba(232,116,90,0.12)',
+        display: 'flex',
+        paddingBottom: 'env(safe-area-inset-bottom, 8px)',
+      }}>
+        {FOOTER_TABS.map(tab => {
+          const isActive = activeTab === tab.id;
+          return (
+            <motion.button
+              key={tab.id}
+              whileTap={{ scale: 0.88 }}
+              onClick={() => handleTabPress(tab.id)}
+              style={{
+                flex: 1,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                gap: 3,
+                padding: '10px 4px 8px',
+                background: 'none', border: 'none', cursor: 'pointer',
+                position: 'relative',
+              }}
+            >
+              {/* Active indicator dot */}
+              {isActive && (
+                <motion.div
+                  layoutId="activeTabDot"
+                  style={{
+                    position: 'absolute', top: 6,
+                    width: 28, height: 3, borderRadius: 999,
+                    background: `linear-gradient(90deg, #FF8C42, #E8745A)`,
+                  }}
+                />
+              )}
+              <span style={{ fontSize: 22, lineHeight: 1 }}>{tab.icon}</span>
+              <span style={{
+                fontFamily: 'Fredoka One, Nunito, sans-serif',
+                fontSize: 11, fontWeight: 700,
+                color: isActive ? '#E8745A' : '#B8A898',
+                letterSpacing: 0.2,
+              }}>{tab.label}</span>
+            </motion.button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -1806,7 +1944,7 @@ export default function Home() {
 
   // ── Title ──
   if (screen === 'title') {
-    return <TitleScreen onPlay={() => setScreen('worldMap')} />;
+    return <TitleScreen onPlay={() => setScreen('worldMap')} completedLevels={completedLevels} />;
   }
 
   // ── World map ──
