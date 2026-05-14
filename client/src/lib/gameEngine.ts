@@ -504,8 +504,8 @@ export const LEVELS: LevelConfig[] = [
     budget: { type: 'moves', maxMoves: 14 },
     starThresholds: { two: 0.5, three: 0.8 }, triggers: [],
     containers: [
-      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'white'] },
-      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['ginger', 'white', 'ginger'] },
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['white', 'ginger'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['ginger', 'white'] },
       { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: [] },
     ],
   },
