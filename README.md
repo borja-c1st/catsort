@@ -202,6 +202,86 @@ Cat images are rendered as emoji via `CatImg` component (SVG/emoji fallback, no 
 
 ---
 
+## Game Mechanics Context (`game_mechanics_context/`)
+
+The `game_mechanics_context/` folder is a **design specification library** cloned from [BobbyAnalyst/CatSort](https://github.com/BobbyAnalyst/CatSort). It defines every game mechanic as a standalone prompt-ready document. Any AI agent or developer working on this project should read these specs before implementing or modifying game logic.
+
+### What It Is
+
+A 19-file prompt-net that fully specifies the CatSort puzzle engine — from the atomic `Item` up to `BossLevel` and `Booster`. Each file is ≤ 120 lines, theme-agnostic (no `cat` or `tower` in interfaces), and designed to be fed directly to a code-capable AI agent.
+
+### Reading Order
+
+Always start with `Overview.md`, then follow this dependency order:
+
+| # | File | What it defines |
+|---|------|-----------------|
+| 0 | [`Overview.md`](game_mechanics_context/Overview.md) | Spine of the spec — locked design decisions, core loop diagram, domain element list. **Read first.** |
+| 1 | [`Container.md`](game_mechanics_context/Container.md) | Stack-holding location with grab number N (maps to a Tower in the game) |
+| 2 | [`Item.md`](game_mechanics_context/Item.md) | Colored unit; one coat from the Level palette (maps to a Cat) |
+| 3 | [`Chunk.md`](game_mechanics_context/Chunk.md) | Transient N-Item group lifted during a Move (the floating grabbed cats) |
+| 4 | [`Grab.md`](game_mechanics_context/Grab.md) | Removes exactly N top Items from a source Container |
+| 5 | [`Placement.md`](game_mechanics_context/Placement.md) | Drops a Chunk onto a target Container |
+| 6 | [`Move.md`](game_mechanics_context/Move.md) | One Grab + one Placement; ticks the Budget |
+| 7 | [`Budget.md`](game_mechanics_context/Budget.md) | Move and/or time limit |
+| 8 | [`Vanish.md`](game_mechanics_context/Vanish.md) | Post-Placement merge-K scan; runs of ≥ K same-coat Items vanish anywhere in the stack |
+| 9 | [`WinCondition.md`](game_mechanics_context/WinCondition.md) | All goal-coat Items cleared |
+| 10 | [`FailCondition.md`](game_mechanics_context/FailCondition.md) | Budget exhausted before WinCondition |
+| 11 | [`SpecialContainer.md`](game_mechanics_context/SpecialContainer.md) | Container variants (frozen, locked, etc.) |
+| 12 | [`SpecialItem.md`](game_mechanics_context/SpecialItem.md) | Item variants (wild, locked, etc.) |
+| 13 | [`LevelTrigger.md`](game_mechanics_context/LevelTrigger.md) | Declarative per-Level rules firing on game events |
+| 14 | [`Level.md`](game_mechanics_context/Level.md) | Assembles Containers + palette + goal coats + K + Budget + triggers + specials |
+| 15 | [`BossLevel.md`](game_mechanics_context/BossLevel.md) | Level archetype (`isBoss: true`) with spawn triggers + tight Budget |
+| 16 | [`Booster.md`](game_mechanics_context/Booster.md) | Runtime hooks for assist/override consumables (Undo, +Moves, Bomb) |
+| 17 | [`Theme.md`](game_mechanics_context/Theme.md) | How CatSort consumes the project Theme contract |
+| 18 | [`ArtSpec.md`](game_mechanics_context/ArtSpec.md) | Art-direction brief for the cat launch skin |
+| 19 | [`ArtLibrary.md`](game_mechanics_context/ArtLibrary.md) | Runtime asset registry; placeholder → polish swap |
+
+### How Elements Interact
+
+Runtime data flow during a single Move:
+
+```
+Player taps source
+  → Grab (lifts N top Items)
+    → Chunk (transient group)
+      → Player taps target
+        → Placement (pushes onto Container, ticks Move)
+          → Budget (decremented)
+          → Vanish (scans whole stack for runs ≥ K)
+            → cascades on gravity collapse
+            → emits clearance to WinCondition
+          → FailCondition (if Budget hits zero)
+```
+
+Cross-cutting modifiers: `LevelTrigger` fires on Move/Vanish/Budget events; `SpecialContainer` modifies stack behavior; `SpecialItem` modifies Vanish run rules; `Booster` is player-invoked override.
+
+### Mapping Spec → Code
+
+| Spec term | Code equivalent |
+|-----------|-----------------|
+| `Container` | `ContainerState` in `gameEngine.ts` |
+| `Item` | `CatItem` in `gameEngine.ts` |
+| `Chunk` | The `heldChunk` in `GameState` |
+| `Grab` | First half of `placeChunk()` |
+| `Placement` | Second half of `placeChunk()` |
+| `Vanish` | `findRuns()` + `VanishStep` in `gameEngine.ts` |
+| `Budget` | `GameState.budget.movesLeft` |
+| `WinCondition` | `goalCoats` cleared check in `placeChunk()` |
+| `Level` | `LevelConfig` + `LEVELS[]` in `gameEngine.ts` |
+| `Booster` | `BoosterBar` in `Home.tsx` (UI only, logic not yet implemented) |
+
+### For AI Agents
+
+When implementing a new mechanic (e.g. a `SpecialContainer` variant or a new `Booster`):
+1. Read the corresponding spec file in `game_mechanics_context/`
+2. Check the **Reads First** links at the top of that spec file
+3. Map the spec's TypeScript interface to the existing types in `gameEngine.ts`
+4. Implement in `gameEngine.ts` (pure logic) first, then wire up UI in `Home.tsx`
+5. Run `npx tsc --noEmit` before committing
+
+---
+
 ## Planned / Backlog
 
 - [ ] Sound effects (mrow on grab, pop on vanish, chime on win)
