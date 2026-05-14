@@ -496,16 +496,16 @@ export const LEVELS: LevelConfig[] = [
   // WORLD 1 — Cozy Living Room  (L1-5)
   // ════════════════════════════════════════════════════════════════════════
 
-  // L1 — Tier 1: merge-2, grab≤2, 3 towers, goal: ginger
+  // L1 — Tier 1: merge-2, grab≤2, 3 towers, goal: ginger + white
   {
     id: 1, name: 'Sunny Windowsill', world: 1, levelInWorld: 1, isBoss: false,
-    description: 'Stack 2 ginger kittens together!',
-    goalCoats: ['ginger'], mergeSizeK: 2,
-    budget: { type: 'moves', maxMoves: 10 },
+    description: 'Match 2 orange cats and 2 white cats!',
+    goalCoats: ['ginger', 'white'], mergeSizeK: 2,
+    budget: { type: 'moves', maxMoves: 14 },
     starThresholds: { two: 0.5, three: 0.8 }, triggers: [],
     containers: [
-      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'white', 'ginger'] },
-      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['white'] },
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'white'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['ginger', 'white', 'ginger'] },
       { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: [] },
     ],
   },
