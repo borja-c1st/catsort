@@ -1420,11 +1420,45 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
   return (
     <div style={{
       height: '100dvh', maxWidth: 480, margin: '0 auto',
-      background: `linear-gradient(180deg, #FFD6F0 0%, #FFF0E8 35%, #E8F4FF 70%, #F0FFE8 100%)`,
+      background: 'linear-gradient(160deg, #7B2FF7 0%, #F107A3 35%, #FF6B35 65%, #FFD700 100%)',
       display: 'flex', flexDirection: 'column',
       overflow: 'hidden',
       position: 'relative',
     }}>
+
+      {/* ── Decorative background blobs ── */}
+      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+        {/* Top-left glow */}
+        <div style={{
+          position: 'absolute', top: -80, left: -80,
+          width: 280, height: 280, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.12)',
+          filter: 'blur(40px)',
+        }} />
+        {/* Center glow */}
+        <div style={{
+          position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%,-50%)',
+          width: 320, height: 320, borderRadius: '50%',
+          background: 'rgba(255,180,80,0.18)',
+          filter: 'blur(60px)',
+        }} />
+        {/* Bottom-right glow */}
+        <div style={{
+          position: 'absolute', bottom: -60, right: -60,
+          width: 240, height: 240, borderRadius: '50%',
+          background: 'rgba(123,47,247,0.25)',
+          filter: 'blur(50px)',
+        }} />
+        {/* Sparkle dots */}
+        {[{x:'15%',y:'18%',s:6},{x:'82%',y:'12%',s:4},{x:'70%',y:'28%',s:5},{x:'10%',y:'55%',s:4},{x:'88%',y:'48%',s:6},{x:'25%',y:'72%',s:5},{x:'75%',y:'68%',s:4}].map((d,i) => (
+          <div key={i} style={{
+            position: 'absolute', left: d.x, top: d.y,
+            width: d.s, height: d.s, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.7)',
+            boxShadow: '0 0 6px 2px rgba(255,255,255,0.5)',
+          }} />
+        ))}
+      </div>
 
       {/* ── Currency pills — floating top center, no header bar ── */}
       <div style={{
@@ -1488,25 +1522,26 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
         flex: 1, display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         paddingTop: 80, paddingBottom: 20,
-        gap: 0,
+        gap: 0, position: 'relative', zIndex: 1,
       }}>
         {/* Game title */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 160, damping: 16 }}
-          style={{ textAlign: 'center', marginBottom: 8 }}
+          style={{ textAlign: 'center', marginBottom: 8, position: 'relative', zIndex: 1 }}
         >
           <div style={{
             fontFamily: 'Fredoka One, Nunito, sans-serif',
-            fontSize: 54, lineHeight: 1,
-            color: '#3A2A25',
-            textShadow: '0 4px 0 rgba(232,116,90,0.3), 0 8px 24px rgba(232,116,90,0.15)',
-            letterSpacing: 1,
+            fontSize: 58, lineHeight: 1,
+            color: '#FFFFFF',
+            textShadow: '0 4px 0 rgba(0,0,0,0.25), 0 8px 32px rgba(0,0,0,0.2)',
+            letterSpacing: 2,
           }}>CatSort</div>
           <div style={{
             fontFamily: 'Caveat, cursive', fontSize: 20,
-            color: C.brownMid, marginTop: 2,
+            color: 'rgba(255,255,255,0.85)', marginTop: 2,
+            textShadow: '0 1px 4px rgba(0,0,0,0.2)',
           }}>Stack · Sort · Vanish!</div>
         </motion.div>
 
@@ -1526,11 +1561,13 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
         {/* Decorative mini towers */}
         <div style={{
           display: 'flex', gap: 18, alignItems: 'flex-end',
-          background: 'rgba(255,255,255,0.55)',
+          background: 'rgba(255,255,255,0.18)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
           borderRadius: 28, padding: '18px 28px 14px',
-          border: '2px solid rgba(255,200,170,0.5)',
-          boxShadow: '0 8px 32px rgba(232,116,90,0.12)',
-          marginBottom: 28,
+          border: '1.5px solid rgba(255,255,255,0.35)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+          marginBottom: 28, position: 'relative', zIndex: 1,
         }}>
           {[
             { cats: ['ginger', 'ginger'] as CoatId[], n: 2 },
@@ -1594,9 +1631,12 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
       {/* ── Footer tab bar ── */}
       <div style={{
         flexShrink: 0,
-        background: 'rgba(255,255,255,0.95)',
-        borderTop: '2px solid rgba(255,200,170,0.5)',
-        boxShadow: '0 -4px 24px rgba(232,116,90,0.12)',
+        background: 'rgba(255,255,255,0.15)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderTop: '1.5px solid rgba(255,255,255,0.3)',
+        boxShadow: '0 -4px 24px rgba(0,0,0,0.15)',
+        position: 'relative', zIndex: 2,
         display: 'flex',
         paddingBottom: 'env(safe-area-inset-bottom, 8px)',
       }}>
@@ -1623,7 +1663,7 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
                   style={{
                     position: 'absolute', top: 6,
                     width: 28, height: 3, borderRadius: 999,
-                    background: `linear-gradient(90deg, #FF8C42, #E8745A)`,
+                    background: `linear-gradient(90deg, #FFD700, #FFA500)`,
                   }}
                 />
               )}
@@ -1631,7 +1671,7 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
               <span style={{
                 fontFamily: 'Fredoka One, Nunito, sans-serif',
                 fontSize: 11, fontWeight: 700,
-                color: isActive ? '#E8745A' : '#B8A898',
+                color: isActive ? '#FFD700' : 'rgba(255,255,255,0.65)',
                 letterSpacing: 0.2,
               }}>{tab.label}</span>
             </motion.button>
