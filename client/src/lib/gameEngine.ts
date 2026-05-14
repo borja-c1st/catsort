@@ -504,7 +504,7 @@ export const LEVELS: LevelConfig[] = [
     budget: { type: 'moves', maxMoves: 10 },
     starThresholds: { two: 0.5, three: 0.8 }, triggers: [],
     containers: [
-      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['white', 'ginger', 'ginger'] },
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'white', 'ginger'] },
       { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['white'] },
       { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: [] },
     ],
@@ -520,7 +520,7 @@ export const LEVELS: LevelConfig[] = [
     containers: [
       { id: 'c1', grabNumber: 1, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'tabby', 'white', 'tabby'] },
       { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['tabby', 'ginger', 'tabby', 'white'] },
-      { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: ['ginger', 'ginger'] },
+      { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: ['black', 'ginger'] },
       { id: 'c4', grabNumber: 2, capacity: 10, position: { x: 3, y: 0 }, startStack: [] },
     ],
   },
