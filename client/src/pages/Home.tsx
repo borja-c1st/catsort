@@ -1767,11 +1767,23 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, v
 
 // ─── Sound Engine ────────────────────────────────────────────────────────────
 
+// Single shared BGM element — created once outside the hook so it survives re-renders and level changes
+const _bgm = typeof window !== 'undefined' ? (() => {
+  const a = new Audio('/assets/bgm_main.mp3');
+  a.loop = true;
+  a.volume = 0.28;
+  return a;
+})() : null;
+
+// Pre-load one-shot SFX elements
+const _sfxWin = typeof window !== 'undefined' ? (() => { const a = new Audio('/assets/sfx_win.mp3'); a.volume = 0.65; return a; })() : null;
+const _sfxLose = typeof window !== 'undefined' ? (() => { const a = new Audio('/assets/sfx_lose.mp3'); a.volume = 0.65; return a; })() : null;
+
 function useSoundEngine() {
-  const bgmRef = useRef<HTMLAudioElement | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const [muted, setMuted] = useState(false);
   const mutedRef = useRef(false);
+  const bgmStartedRef = useRef(false);
 
   // Lazy-init AudioContext on first user gesture
   const getCtx = () => {
@@ -1784,89 +1796,78 @@ function useSoundEngine() {
     return audioCtxRef.current;
   };
 
-  // Start BGM once on mount
+  // Start BGM on first user gesture — never restart it
   useEffect(() => {
-    const audio = new Audio('/assets/bgm_main.mp3');
-    audio.loop = true;
-    audio.volume = 0.35;
-    bgmRef.current = audio;
-    const play = () => { audio.play().catch(() => {}); };
-    document.addEventListener('pointerdown', play, { once: true });
-    return () => {
-      document.removeEventListener('pointerdown', play);
-      audio.pause();
+    const startBgm = () => {
+      if (bgmStartedRef.current || !_bgm) return;
+      bgmStartedRef.current = true;
+      _bgm.play().catch(() => {});
     };
+    document.addEventListener('pointerdown', startBgm, { once: true });
+    return () => document.removeEventListener('pointerdown', startBgm);
   }, []);
 
   const toggleMute = useCallback(() => {
     const next = !mutedRef.current;
     mutedRef.current = next;
     setMuted(next);
-    if (bgmRef.current) bgmRef.current.volume = next ? 0 : 0.35;
+    if (_bgm) _bgm.volume = next ? 0 : 0.28;
   }, []);
 
-  // Procedural purr: soft filtered noise burst
+  // Procedural purr: soft filtered noise burst (Web Audio — no file, zero latency)
   const playPurr = useCallback(() => {
     if (mutedRef.current) return;
     try {
       const ctx = getCtx();
       const buf = ctx.createBuffer(1, ctx.sampleRate * 0.18, ctx.sampleRate);
       const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.4;
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
       const src = ctx.createBufferSource();
       src.buffer = buf;
       const filter = ctx.createBiquadFilter();
       filter.type = 'bandpass';
-      filter.frequency.value = 280;
-      filter.Q.value = 3.5;
+      filter.frequency.value = 260;
+      filter.Q.value = 4;
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.55, ctx.currentTime);
+      gain.gain.setValueAtTime(0.35, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
       src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
       src.start();
     } catch {}
   }, []);
 
-  // Procedural meow: FM synthesis sweep
+  // Procedural meow: FM synthesis sweep (Web Audio — no file, zero latency)
   const playMeow = useCallback(() => {
     if (mutedRef.current) return;
     try {
       const ctx = getCtx();
       const osc = ctx.createOscillator();
       osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(380, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(520, ctx.currentTime + 0.08);
-      osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.22);
+      osc.frequency.setValueAtTime(360, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + 0.08);
+      osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.22);
       const filter = ctx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(1800, ctx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.22);
+      filter.frequency.setValueAtTime(1600, ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(550, ctx.currentTime + 0.22);
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.45, ctx.currentTime);
+      gain.gain.setValueAtTime(0.28, ctx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
       osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
       osc.start(); osc.stop(ctx.currentTime + 0.28);
     } catch {}
   }, []);
 
-  // Win jingle from file
+  // Win jingle — one-shot, rewind before play so rapid replays work
   const playWin = useCallback(() => {
-    if (mutedRef.current) return;
-    try {
-      const a = new Audio('/assets/sfx_win.mp3');
-      a.volume = 0.7;
-      a.play().catch(() => {});
-    } catch {}
+    if (mutedRef.current || !_sfxWin) return;
+    try { _sfxWin.currentTime = 0; _sfxWin.play().catch(() => {}); } catch {}
   }, []);
 
-  // Lose jingle from file
+  // Lose jingle — one-shot, rewind before play
   const playLose = useCallback(() => {
-    if (mutedRef.current) return;
-    try {
-      const a = new Audio('/assets/sfx_lose.mp3');
-      a.volume = 0.7;
-      a.play().catch(() => {});
-    } catch {}
+    if (mutedRef.current || !_sfxLose) return;
+    try { _sfxLose.currentTime = 0; _sfxLose.play().catch(() => {}); } catch {}
   }, []);
 
   return { playPurr, playMeow, playWin, playLose, toggleMute, muted };
