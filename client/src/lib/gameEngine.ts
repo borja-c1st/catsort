@@ -545,18 +545,22 @@ export const LEVELS: LevelConfig[] = [
     ],
   },
 
-  // L4 — Tier 2: merge-3, grab≤3, 4 towers, goal: siamese
+  // L4 — Tier 2: merge-3, grab-1 towers, 5 towers, goal: tabby+calico
+  // Verified solvable in 6 moves:
+  //   T1→T5:[calico], T1→T3:[tabby], T1→T5:[calico],
+  //   T2→T3:[tabby],  T2→T5:[calico]→VANISH calico×3, T2→T3:[tabby]→VANISH tabby×3 → WIN
   {
-    id: 4, name: 'Surprise Guests', world: 1, levelInWorld: 4, isBoss: false,
-    description: 'Send the siamese cats to rest',
-    goalCoats: ['siamese'], mergeSizeK: 3,
-    budget: { type: 'moves', maxMoves: 26 },
-    starThresholds: { two: 0.25, three: 0.5 }, triggers: [],
+    id: 4, name: 'Spotted & Grey Again', world: 1, levelInWorld: 4, isBoss: false,
+    description: 'Sort the spotted and grey cats — one at a time!',
+    goalCoats: ['calico', 'tabby'], mergeSizeK: 3,
+    budget: { type: 'moves', maxMoves: 20 },
+    starThresholds: { two: 0.4, three: 0.7 }, triggers: [],
     containers: [
-      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'siamese', 'tabby', 'black', 'siamese'] },
-      { id: 'c2', grabNumber: 3, capacity: 10, position: { x: 1, y: 0 }, startStack: ['siamese', 'calico', 'black', 'siamese', 'tabby'] },
-      { id: 'c3', grabNumber: 2, capacity: 10, position: { x: 2, y: 0 }, startStack: ['tabby', 'siamese', 'calico', 'ginger'] },
+      { id: 'c1', grabNumber: 1, capacity: 10, position: { x: 0, y: 0 }, startStack: ['ginger', 'calico', 'tabby', 'calico'] },
+      { id: 'c2', grabNumber: 1, capacity: 10, position: { x: 1, y: 0 }, startStack: ['black', 'tabby', 'calico', 'tabby'] },
+      { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: [] },
       { id: 'c4', grabNumber: 3, capacity: 10, position: { x: 3, y: 0 }, startStack: [] },
+      { id: 'c5', grabNumber: 3, capacity: 10, position: { x: 4, y: 0 }, startStack: [] },
     ],
   },
 
