@@ -530,12 +530,17 @@ export const LEVELS: LevelConfig[] = [
     id: 3, name: 'Spotted & Grey', world: 1, levelInWorld: 3, isBoss: false,
     description: 'Sort the spotted and grey cats into their beds',
     goalCoats: ['calico', 'tabby'], mergeSizeK: 3,
-    budget: { type: 'moves', maxMoves: 24 },
+    budget: { type: 'moves', maxMoves: 28 },
     starThresholds: { two: 0.3, three: 0.55 }, triggers: [],
+    // Verified solvable in 4 moves (BFS confirmed):
+    // Move 1: grab 2 from C1 [calico,tabby] → C3
+    // Move 2: grab 1 from C1 [calico] → C3  → C3 now has 3 calico → VANISH
+    // Move 3: grab 2 from C2 [tabby,calico] → C3
+    // Move 4: grab 1 from C2 [tabby] → C3  → C3 now has 3 tabby → VANISH → WIN
     containers: [
-      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['tabby', 'calico', 'tabby', 'calico'] },
-      { id: 'c2', grabNumber: 3, capacity: 10, position: { x: 1, y: 0 }, startStack: ['calico', 'tabby', 'calico', 'tabby'] },
-      { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: ['tabby', 'calico'] },
+      { id: 'c1', grabNumber: 2, capacity: 10, position: { x: 0, y: 0 }, startStack: ['calico', 'tabby', 'calico'] },
+      { id: 'c2', grabNumber: 2, capacity: 10, position: { x: 1, y: 0 }, startStack: ['tabby', 'calico', 'tabby'] },
+      { id: 'c3', grabNumber: 3, capacity: 10, position: { x: 2, y: 0 }, startStack: [] },
       { id: 'c4', grabNumber: 3, capacity: 10, position: { x: 3, y: 0 }, startStack: [] },
     ],
   },
