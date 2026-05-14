@@ -1854,31 +1854,42 @@ function useSoundEngine() {
     } catch {}
   }, []);
 
-  // Win ding — duck BGM briefly, play ding, restore BGM
+  // Win ding — pause BGM, play ding
   const playWin = useCallback(() => {
     if (mutedRef.current || !_sfxWin) return;
     try {
-      if (_bgm) { _bgm.volume = 0.06; setTimeout(() => { if (_bgm) _bgm.volume = mutedRef.current ? 0 : 0.22; }, 1800); }
-      _sfxWin.currentTime = 0; _sfxWin.play().catch(() => {});
+      if (_bgm) _bgm.pause();
+      _sfxWin.currentTime = 0;
+      _sfxWin.play().catch(() => {});
     } catch {}
   }, []);
 
-  // Lose jingle — duck BGM briefly
+  // Lose jingle — pause BGM, play jingle
   const playLose = useCallback(() => {
     if (mutedRef.current || !_sfxLose) return;
     try {
-      if (_bgm) { _bgm.volume = 0.06; setTimeout(() => { if (_bgm) _bgm.volume = mutedRef.current ? 0 : 0.22; }, 2500); }
-      _sfxLose.currentTime = 0; _sfxLose.play().catch(() => {});
+      if (_bgm) _bgm.pause();
+      _sfxLose.currentTime = 0;
+      _sfxLose.play().catch(() => {});
     } catch {}
   }, []);
 
-  return { playPurr, playMeow, playWin, playLose, toggleMute, muted };
+  // Resume BGM from where it was paused (call when next level starts)
+  const resumeBgm = useCallback(() => {
+    if (mutedRef.current || !_bgm) return;
+    // Stop any playing SFX first
+    if (_sfxWin) { _sfxWin.pause(); _sfxWin.currentTime = 0; }
+    if (_sfxLose) { _sfxLose.pause(); _sfxLose.currentTime = 0; }
+    _bgm.play().catch(() => {});
+  }, []);
+
+  return { playPurr, playMeow, playWin, playLose, resumeBgm, toggleMute, muted };
 }
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
-  const { playPurr, playMeow, playWin, playLose, toggleMute, muted } = useSoundEngine();
+  const { playPurr, playMeow, playWin, playLose, resumeBgm, toggleMute, muted } = useSoundEngine();
   const [screen, setScreen] = useState<'title' | 'worldMap' | 'playing' | 'paused'>('title');
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [completedLevels, setCompletedLevels] = useState<Record<number, number>>({});
@@ -1936,7 +1947,8 @@ export default function Home() {
     setGameState(state);
     setPrevState(null);
     setScreen('playing');
-  }, []);
+    resumeBgm();
+  }, [resumeBgm]);
 
   const handleUndo = useCallback(() => {
     if (prevState) {
