@@ -1771,13 +1771,13 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, v
 const _bgm = typeof window !== 'undefined' ? (() => {
   const a = new Audio('/assets/bgm_main.mp3');
   a.loop = true;
-  a.volume = 0.28;
+  a.volume = 0.22;
   return a;
 })() : null;
 
 // Pre-load one-shot SFX elements
-const _sfxWin = typeof window !== 'undefined' ? (() => { const a = new Audio('/assets/sfx_win.mp3'); a.volume = 0.65; return a; })() : null;
-const _sfxLose = typeof window !== 'undefined' ? (() => { const a = new Audio('/assets/sfx_lose.mp3'); a.volume = 0.65; return a; })() : null;
+const _sfxWin = typeof window !== 'undefined' ? (() => { const a = new Audio('/assets/sfx_win.mp3'); a.volume = 0.55; return a; })() : null;
+const _sfxLose = typeof window !== 'undefined' ? (() => { const a = new Audio('/assets/sfx_lose.mp3'); a.volume = 0.45; return a; })() : null;
 
 function useSoundEngine() {
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -1814,60 +1814,62 @@ function useSoundEngine() {
     if (_bgm) _bgm.volume = next ? 0 : 0.28;
   }, []);
 
-  // Procedural purr: soft filtered noise burst (Web Audio — no file, zero latency)
+  // Procedural purr: very soft filtered noise burst
   const playPurr = useCallback(() => {
     if (mutedRef.current) return;
     try {
       const ctx = getCtx();
-      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.18, ctx.sampleRate);
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.12, ctx.sampleRate);
       const data = buf.getChannelData(0);
-      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.3;
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.15;
       const src = ctx.createBufferSource();
       src.buffer = buf;
       const filter = ctx.createBiquadFilter();
       filter.type = 'bandpass';
-      filter.frequency.value = 260;
-      filter.Q.value = 4;
+      filter.frequency.value = 240;
+      filter.Q.value = 5;
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.35, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
       src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
       src.start();
     } catch {}
   }, []);
 
-  // Procedural meow: FM synthesis sweep (Web Audio — no file, zero latency)
+  // Procedural meow: gentle sine sweep, not sawtooth
   const playMeow = useCallback(() => {
     if (mutedRef.current) return;
     try {
       const ctx = getCtx();
       const osc = ctx.createOscillator();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(360, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(500, ctx.currentTime + 0.08);
-      osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.22);
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(1600, ctx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(550, ctx.currentTime + 0.22);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(340, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(460, ctx.currentTime + 0.07);
+      osc.frequency.exponentialRampToValueAtTime(260, ctx.currentTime + 0.18);
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(0.28, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
-      osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
-      osc.start(); osc.stop(ctx.currentTime + 0.28);
+      gain.gain.setValueAtTime(0.16, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.20);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.22);
     } catch {}
   }, []);
 
-  // Win jingle — one-shot, rewind before play so rapid replays work
+  // Win ding — duck BGM briefly, play ding, restore BGM
   const playWin = useCallback(() => {
     if (mutedRef.current || !_sfxWin) return;
-    try { _sfxWin.currentTime = 0; _sfxWin.play().catch(() => {}); } catch {}
+    try {
+      if (_bgm) { _bgm.volume = 0.06; setTimeout(() => { if (_bgm) _bgm.volume = mutedRef.current ? 0 : 0.22; }, 1800); }
+      _sfxWin.currentTime = 0; _sfxWin.play().catch(() => {});
+    } catch {}
   }, []);
 
-  // Lose jingle — one-shot, rewind before play
+  // Lose jingle — duck BGM briefly
   const playLose = useCallback(() => {
     if (mutedRef.current || !_sfxLose) return;
-    try { _sfxLose.currentTime = 0; _sfxLose.play().catch(() => {}); } catch {}
+    try {
+      if (_bgm) { _bgm.volume = 0.06; setTimeout(() => { if (_bgm) _bgm.volume = mutedRef.current ? 0 : 0.22; }, 2500); }
+      _sfxLose.currentTime = 0; _sfxLose.play().catch(() => {});
+    } catch {}
   }, []);
 
   return { playPurr, playMeow, playWin, playLose, toggleMute, muted };
