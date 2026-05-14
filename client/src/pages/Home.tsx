@@ -142,7 +142,7 @@ function CatIdleWrapper({ children, phase, disabled }: {
 // ─── Tower / Container ────────────────────────────────────────────────────────
 
 function TowerContainer({
-  container, containerIndex, isSelected, hasChunk, onTap, isBoss, vanishHighlightIds, catItemRefs,
+  container, containerIndex, isSelected, hasChunk, onTap, isBoss, vanishHighlightIds, catItemRefs, towerRefs,
 }: {
   container: Container;
   containerIndex: number;
@@ -152,6 +152,7 @@ function TowerContainer({
   isBoss: boolean;
   vanishHighlightIds?: Set<string>;
   catItemRefs?: React.MutableRefObject<Map<string, HTMLElement>>;
+  towerRefs?: React.MutableRefObject<Map<string, HTMLElement>>;
 }) {
   const isEmpty = container.stack.length === 0;
   const canPlace = hasChunk && !container.oneWayOut;
@@ -175,7 +176,11 @@ function TowerContainer({
 
   return (
     <motion.div
-      ref={towerRef}
+      ref={(el) => {
+        (towerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+        if (el) towerRefs?.current.set(container.id, el as HTMLElement);
+        else towerRefs?.current.delete(container.id);
+      }}
       onClick={handleClick}
       whileTap={{ scale: 0.96 }}
       style={{
@@ -1683,7 +1688,7 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
 
 // ─── Game board ───────────────────────────────────────────────────────────────
 
-function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, vanishHighlightIds, catItemRefs, onMute, muted }: {
+function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, vanishHighlightIds, catItemRefs, towerRefs, onMute, muted }: {
   state: GameState;
   onTap: (containerId: string, e: React.MouseEvent, towerCenterX: number, towerCenterY: number) => void;
   onPause: () => void;
@@ -1694,6 +1699,7 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, v
   muted: boolean;
   vanishHighlightIds: Set<string>;
   catItemRefs: React.MutableRefObject<Map<string, HTMLElement>>;
+  towerRefs: React.MutableRefObject<Map<string, HTMLElement>>;
 }) {
   const cfg = state.levelConfig!;
   const isBoss = cfg.isBoss;
@@ -1765,6 +1771,7 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, v
               isBoss={isBoss}
               vanishHighlightIds={vanishHighlightIds}
               catItemRefs={catItemRefs}
+              towerRefs={towerRefs}
             />
           ))}
         </div>
@@ -1928,6 +1935,8 @@ export default function Home() {
   const animTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   // Map of item-id → DOM element for computing vanish midpoint
   const catItemRefs = useRef<Map<string, HTMLElement>>(new Map());
+  // Map of container-id → tower DOM element for rain animation x positions
+  const towerRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   // Play lose sound when level fails
   useEffect(() => {
@@ -2105,13 +2114,10 @@ export default function Home() {
           const postIds = new Set(postC.stack.map(it => it.id));
           const newItems = finalC.stack.filter(it => !postIds.has(it.id));
           if (newItems.length > 0) {
-            // Estimate x position from container index
-            const cIdx = result.newState.containers.indexOf(finalC);
-            const totalC = result.newState.containers.length;
-            const screenW = window.innerWidth;
-            const colW = Math.min(screenW / totalC, 90);
-            const startX = (screenW - colW * totalC) / 2;
-            const cx = startX + cIdx * colW + colW / 2;
+            // Use actual tower DOM position for accurate rain x
+            const towerEl = towerRefs.current.get(finalC.id);
+            const rect = towerEl?.getBoundingClientRect();
+            const cx = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
             newItems.forEach(it => spawnedRain.push({ id: it.id + '_rain', coat: it.coat, x: cx }));
           }
         }
@@ -2170,6 +2176,7 @@ export default function Home() {
         undoAvailable={!!prevState}
         vanishHighlightIds={vanishHighlightIds}
         catItemRefs={catItemRefs}
+        towerRefs={towerRefs}
         onMute={toggleMute}
         muted={muted}
       />
