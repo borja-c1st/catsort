@@ -532,12 +532,19 @@ export const LEVELS: LevelConfig[] = [
     goalCoats: ['calico', 'tabby'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 28 },
     starThresholds: { two: 0.3, three: 0.55 },
-    // After first vanish: interleave calico/tabby/ginger across all 4 towers — no two same-coat in same tower
+    // Wave 1 (after vanish 1): interleave calico/tabby/ginger across all 4 towers
+    // Wave 2 (after vanish 3, i.e. 2 more vanishes later): second interleaved rain
     triggers: [
+      // Wave 1
       { event: 'onVanishComplete', condition: { vanishesCompleted: 1 }, action: { type: 'spawnItems', containerId: 'c1', items: [{ id: 'rain_c1', coat: 'calico' }] } },
       { event: 'onVanishComplete', condition: { vanishesCompleted: 1 }, action: { type: 'spawnItems', containerId: 'c2', items: [{ id: 'rain_t1', coat: 'tabby' }] } },
       { event: 'onVanishComplete', condition: { vanishesCompleted: 1 }, action: { type: 'spawnItems', containerId: 'c3', items: [{ id: 'rain_g1', coat: 'ginger' }, { id: 'rain_c2', coat: 'calico' }] } },
       { event: 'onVanishComplete', condition: { vanishesCompleted: 1 }, action: { type: 'spawnItems', containerId: 'c4', items: [{ id: 'rain_t2', coat: 'tabby' }, { id: 'rain_g2', coat: 'ginger' }] } },
+      // Wave 2 (2 more vanishes later)
+      { event: 'onVanishComplete', condition: { vanishesCompleted: 3 }, action: { type: 'spawnItems', containerId: 'c1', items: [{ id: 'rain2_t1', coat: 'tabby' }, { id: 'rain2_g1', coat: 'ginger' }] } },
+      { event: 'onVanishComplete', condition: { vanishesCompleted: 3 }, action: { type: 'spawnItems', containerId: 'c2', items: [{ id: 'rain2_c1', coat: 'calico' }, { id: 'rain2_t2', coat: 'tabby' }] } },
+      { event: 'onVanishComplete', condition: { vanishesCompleted: 3 }, action: { type: 'spawnItems', containerId: 'c3', items: [{ id: 'rain2_g2', coat: 'ginger' }] } },
+      { event: 'onVanishComplete', condition: { vanishesCompleted: 3 }, action: { type: 'spawnItems', containerId: 'c4', items: [{ id: 'rain2_c2', coat: 'calico' }] } },
     ],
     // Verified solvable in 4 moves (BFS confirmed):
     // Move 1: grab 2 from C1 [calico,tabby] → C3
