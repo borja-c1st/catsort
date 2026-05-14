@@ -458,6 +458,25 @@ function SpeechBubbleLayer({ bubbles }: { bubbles: SpeechBubble[] }) {
 // Hypercasual particle emojis — varied for visual richness
 const BURST_EMOJIS = ['💗', '💖', '✨', '⭐', '💛', '🧡', '💜', '💙'];
 
+// ─── Rain Layer — cats falling from sky into towers ───────────────────────────
+function RainLayer({ items }: { items: { id: string; coat: CoatId; x: number }[] }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 44 }}>
+      {items.map((item, i) => (
+        <motion.div
+          key={item.id}
+          initial={{ x: item.x - 22, y: -60, opacity: 0, rotate: -15 + Math.random() * 30 }}
+          animate={{ x: item.x - 22, y: window.innerHeight * 0.55 + i * 6, opacity: [0, 1, 1, 0], rotate: 0 }}
+          transition={{ duration: 0.65, delay: i * 0.12, ease: [0.23, 1, 0.32, 1] }}
+          style={{ position: 'absolute', width: 44, height: 44 }}
+        >
+          <img src={CAT_IMGS[item.coat]} alt={item.coat} width={44} height={44} style={{ objectFit: 'contain' }} />
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
 function ParticleLayer({ particles }: { particles: Particle[] }) {
   return (
     <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 45 }}>
@@ -1900,6 +1919,8 @@ export default function Home() {
   const [isAnimating, setIsAnimating] = useState(false);
   // Separate particles state so burst can fire independently of gameState updates (no React batching lag)
   const [burst, setBurst] = useState<Particle[]>([]);
+  // Rain animation: cats falling from sky into towers after spawnItems trigger
+  const [rainItems, setRainItems] = useState<{ id: string; coat: CoatId; x: number }[]>([]);
 
   const chainTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const msgTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -2075,6 +2096,30 @@ export default function Home() {
 
       // 4. After all steps, commit the final resolved state
       const finalT = setTimeout(() => {
+        // Detect spawned items (from spawnItems triggers) by comparing final state to last step postState
+        const lastPost = steps[steps.length - 1].postState;
+        const spawnedRain: { id: string; coat: CoatId; x: number }[] = [];
+        for (const finalC of result.newState.containers) {
+          const postC = lastPost.containers.find(c => c.id === finalC.id);
+          if (!postC) continue;
+          const postIds = new Set(postC.stack.map(it => it.id));
+          const newItems = finalC.stack.filter(it => !postIds.has(it.id));
+          if (newItems.length > 0) {
+            // Estimate x position from container index
+            const cIdx = result.newState.containers.indexOf(finalC);
+            const totalC = result.newState.containers.length;
+            const screenW = window.innerWidth;
+            const colW = Math.min(screenW / totalC, 90);
+            const startX = (screenW - colW * totalC) / 2;
+            const cx = startX + cIdx * colW + colW / 2;
+            newItems.forEach(it => spawnedRain.push({ id: it.id + '_rain', coat: it.coat, x: cx }));
+          }
+        }
+        if (spawnedRain.length > 0) {
+          setRainItems(spawnedRain);
+          setTimeout(() => setRainItems([]), 1200);
+        }
+
         setGameState({ ...result.newState, particles: [] });
         setVanishHighlightIds(new Set());
         setIsAnimating(false);
@@ -2135,6 +2180,7 @@ export default function Home() {
 
       <SpeechBubbleLayer bubbles={gameState.speechBubbles} />
       <ParticleLayer particles={burst} />
+      <RainLayer items={rainItems} />
       <GameMessage message={gameState.message} />
       <ChainBanner chain={showChain} isBoss={isBoss} />
 

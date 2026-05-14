@@ -531,7 +531,12 @@ export const LEVELS: LevelConfig[] = [
     description: 'Sort the spotted and grey cats into their beds',
     goalCoats: ['calico', 'tabby'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 28 },
-    starThresholds: { two: 0.3, three: 0.55 }, triggers: [],
+    starThresholds: { two: 0.3, three: 0.55 },
+    // After first vanish: rain 2 calico into c3 and 2 tabby into c4
+    triggers: [
+      { event: 'onVanishComplete', condition: { vanishesCompleted: 1 }, action: { type: 'spawnItems', containerId: 'c3', items: [{ id: 'rain_c1', coat: 'calico' }, { id: 'rain_c2', coat: 'calico' }] } },
+      { event: 'onVanishComplete', condition: { vanishesCompleted: 1 }, action: { type: 'spawnItems', containerId: 'c4', items: [{ id: 'rain_t1', coat: 'tabby' }, { id: 'rain_t2', coat: 'tabby' }] } },
+    ],
     // Verified solvable in 4 moves (BFS confirmed):
     // Move 1: grab 2 from C1 [calico,tabby] → C3
     // Move 2: grab 1 from C1 [calico] → C3  → C3 now has 3 calico → VANISH
