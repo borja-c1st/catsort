@@ -573,7 +573,7 @@ function CurrencyBar({ isBoss }: { isBoss: boolean }) {
   );
 }
 
-function HUD({ state, onPause, isBoss }: { state: GameState; onPause: () => void; isBoss: boolean }) {
+function HUD({ state, onPause, isBoss, onMute, muted }: { state: GameState; onPause: () => void; isBoss: boolean; onMute: () => void; muted: boolean }) {
   const cfg = state.levelConfig!;
   const goalEntries = Object.entries(state.goalProgress) as [CoatId, { cleared: number; total: number }][];
   const isLow = state.budget.movesLeft <= 5;
@@ -597,18 +597,32 @@ function HUD({ state, onPause, isBoss }: { state: GameState; onPause: () => void
     }}>
       {/* Row 1: pause | level badge | settings */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <motion.button
-          whileTap={{ scale: 0.9 }}
-          onClick={onPause}
-          style={{
-            width: 36, height: 36, borderRadius: 999,
-            background: isBoss ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.7)',
-            border: 'none',
-            boxShadow: '0 3px 0 rgba(0,0,0,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 16, cursor: 'pointer',
-          }}
-        >⏸</motion.button>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={onPause}
+            style={{
+              width: 36, height: 36, borderRadius: 999,
+              background: isBoss ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.7)',
+              border: 'none',
+              boxShadow: '0 3px 0 rgba(0,0,0,0.15)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 16, cursor: 'pointer',
+            }}
+          >⏸</motion.button>
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={onMute}
+            style={{
+              width: 36, height: 36, borderRadius: 999,
+              background: isBoss ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.7)',
+              border: 'none',
+              boxShadow: '0 3px 0 rgba(0,0,0,0.15)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 16, cursor: 'pointer',
+            }}
+          >{muted ? '🔇' : '🔊'}</motion.button>
+        </div>
 
         {/* Level badge — King style pill */}
         <div style={{
@@ -1650,13 +1664,15 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
 
 // ─── Game board ───────────────────────────────────────────────────────────────
 
-function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, vanishHighlightIds, catItemRefs }: {
+function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, vanishHighlightIds, catItemRefs, onMute, muted }: {
   state: GameState;
   onTap: (containerId: string, e: React.MouseEvent, towerCenterX: number, towerCenterY: number) => void;
   onPause: () => void;
   onUndo: () => void;
   onAddMoves: () => void;
   undoAvailable: boolean;
+  onMute: () => void;
+  muted: boolean;
   vanishHighlightIds: Set<string>;
   catItemRefs: React.MutableRefObject<Map<string, HTMLElement>>;
 }) {
@@ -1677,7 +1693,7 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, v
     }}>
       {/* Currency bar — always on very top */}
       <CurrencyBar isBoss={isBoss} />
-      <HUD state={state} onPause={onPause} isBoss={isBoss} />
+      <HUD state={state} onPause={onPause} isBoss={isBoss} onMute={onMute} muted={muted} />
 
       {/* Big hypercasual MERGE N badge */}
       <div style={{
@@ -1749,9 +1765,117 @@ function GameBoard({ state, onTap, onPause, onUndo, onAddMoves, undoAvailable, v
   );
 }
 
+// ─── Sound Engine ────────────────────────────────────────────────────────────
+
+function useSoundEngine() {
+  const bgmRef = useRef<HTMLAudioElement | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const [muted, setMuted] = useState(false);
+  const mutedRef = useRef(false);
+
+  // Lazy-init AudioContext on first user gesture
+  const getCtx = () => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
+    return audioCtxRef.current;
+  };
+
+  // Start BGM once on mount
+  useEffect(() => {
+    const audio = new Audio('/assets/bgm_main.mp3');
+    audio.loop = true;
+    audio.volume = 0.35;
+    bgmRef.current = audio;
+    const play = () => { audio.play().catch(() => {}); };
+    document.addEventListener('pointerdown', play, { once: true });
+    return () => {
+      document.removeEventListener('pointerdown', play);
+      audio.pause();
+    };
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    const next = !mutedRef.current;
+    mutedRef.current = next;
+    setMuted(next);
+    if (bgmRef.current) bgmRef.current.volume = next ? 0 : 0.35;
+  }, []);
+
+  // Procedural purr: soft filtered noise burst
+  const playPurr = useCallback(() => {
+    if (mutedRef.current) return;
+    try {
+      const ctx = getCtx();
+      const buf = ctx.createBuffer(1, ctx.sampleRate * 0.18, ctx.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.4;
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.value = 280;
+      filter.Q.value = 3.5;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.55, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+      src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+      src.start();
+    } catch {}
+  }, []);
+
+  // Procedural meow: FM synthesis sweep
+  const playMeow = useCallback(() => {
+    if (mutedRef.current) return;
+    try {
+      const ctx = getCtx();
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(380, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(520, ctx.currentTime + 0.08);
+      osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.22);
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(1800, ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.22);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.45, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+      osc.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.28);
+    } catch {}
+  }, []);
+
+  // Win jingle from file
+  const playWin = useCallback(() => {
+    if (mutedRef.current) return;
+    try {
+      const a = new Audio('/assets/sfx_win.mp3');
+      a.volume = 0.7;
+      a.play().catch(() => {});
+    } catch {}
+  }, []);
+
+  // Lose jingle from file
+  const playLose = useCallback(() => {
+    if (mutedRef.current) return;
+    try {
+      const a = new Audio('/assets/sfx_lose.mp3');
+      a.volume = 0.7;
+      a.play().catch(() => {});
+    } catch {}
+  }, []);
+
+  return { playPurr, playMeow, playWin, playLose, toggleMute, muted };
+}
+
 // ─── Root ─────────────────────────────────────────────────────────────────────
 
 export default function Home() {
+  const { playPurr, playMeow, playWin, playLose, toggleMute, muted } = useSoundEngine();
   const [screen, setScreen] = useState<'title' | 'worldMap' | 'playing' | 'paused'>('title');
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [completedLevels, setCompletedLevels] = useState<Record<number, number>>({});
@@ -1769,6 +1893,11 @@ export default function Home() {
   const animTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   // Map of item-id → DOM element for computing vanish midpoint
   const catItemRefs = useRef<Map<string, HTMLElement>>(new Map());
+
+  // Play lose sound when level fails
+  useEffect(() => {
+    if (gameState?.phase === 'levelFail') playLose();
+  }, [gameState?.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-clear message
   useEffect(() => {
@@ -1840,6 +1969,7 @@ export default function Home() {
       // Grab phase
       const next = grabChunk(gameState, containerId);
       if (next.chunk) {
+        playPurr();
         const bubble = makeBubble('mrow ~', (event.clientX ?? 160) - 30, (event.clientY ?? 300) - 50);
         setGameState({ ...next, speechBubbles: [bubble] });
       } else {
@@ -1906,6 +2036,7 @@ export default function Home() {
 
         // 2b. Fire burst 50ms after glow starts
         const t2b = setTimeout(() => {
+          playMeow();
           const mid = getVanishMidpoint(step.vanishingIds);
           const heartCount = 7 + step.vanishingIds.length * 2;
           setBurst(spawnParticles(mid.x, mid.y, heartCount));
@@ -1934,6 +2065,7 @@ export default function Home() {
         setIsAnimating(false);
 
         if (result.won && gameState.levelConfig) {
+          playWin();
           const levelId = gameState.levelConfig.id;
           setCompletedLevels(prev => ({
             ...prev,
@@ -1978,6 +2110,8 @@ export default function Home() {
         undoAvailable={!!prevState}
         vanishHighlightIds={vanishHighlightIds}
         catItemRefs={catItemRefs}
+        onMute={toggleMute}
+        muted={muted}
       />
 
       <AnimatePresence>
