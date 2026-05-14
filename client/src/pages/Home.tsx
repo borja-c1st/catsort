@@ -1545,13 +1545,17 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
           }}>Stack · Sort · Vanish!</div>
         </motion.div>
 
-        {/* Bouncing cat parade */}
+        {/* Horizontally dancing cat parade */}
         <div style={{ display: 'flex', gap: 4, justifyContent: 'center', marginBottom: 28 }}>
           {(['ginger', 'white', 'calico', 'tabby', 'siamese', 'black'] as CoatId[]).map((c, i) => (
             <motion.div
               key={c}
-              animate={{ y: [0, -12, 0], rotate: [0, i % 2 === 0 ? 5 : -5, 0] }}
-              transition={{ repeat: Infinity, duration: 1.4, delay: i * 0.15, ease: 'easeInOut' }}
+              animate={{
+                x: [0, i % 2 === 0 ? 6 : -6, 0],
+                rotate: [0, i % 2 === 0 ? 12 : -12, 0],
+                y: [0, -4, 0],
+              }}
+              transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.12, ease: 'easeInOut' }}
             >
               <CatImg coat={c} size={52} />
             </motion.div>
