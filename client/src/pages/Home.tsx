@@ -1524,71 +1524,88 @@ function TitleScreen({ onPlay, completedLevels }: { onPlay: () => void; complete
         paddingTop: 80, paddingBottom: 20,
         gap: 0, position: 'relative', zIndex: 1,
       }}>
-        {/* ── Cat-letter logo: "CatSort" spelled with cats on 2 rows ── */}
-        {/*
-          Row 1: C-A-T  (3 cats)
-          Row 2: S-O-R-T (4 cats)
-          Each cat has its letter label beneath it.
-        */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.85 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ type: 'spring', stiffness: 140, damping: 14 }}
-          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, marginBottom: 28 }}
-        >
-          {/* Row 1: C A T */}
-          <div style={{ display: 'flex', gap: 6 }}>
-            {(['C','A','T'] as const).map((letter, i) => {
-              const coats: CoatId[] = ['ginger','white','calico'];
-              return (
-                <motion.div
-                  key={letter}
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.6, delay: i * 0.18, ease: 'easeInOut' }}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
-                >
-                  <CatImg coat={coats[i]} size={58} />
-                  <span style={{
-                    fontFamily: 'Fredoka One, Nunito, sans-serif',
-                    fontSize: 22, fontWeight: 700,
-                    color: '#FFFFFF',
-                    textShadow: '0 2px 8px rgba(0,0,0,0.35)',
-                    lineHeight: 1,
-                  }}>{letter}</span>
-                </motion.div>
-              );
-            })}
-          </div>
-          {/* Row 2: S O R T */}
-          <div style={{ display: 'flex', gap: 6 }}>
-            {(['S','O','R','T'] as const).map((letter, i) => {
-              const coats: CoatId[] = ['tabby','siamese','black','ginger'];
-              return (
-                <motion.div
-                  key={letter}
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.6, delay: 0.54 + i * 0.18, ease: 'easeInOut' }}
-                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
-                >
-                  <CatImg coat={coats[i]} size={58} />
-                  <span style={{
-                    fontFamily: 'Fredoka One, Nunito, sans-serif',
-                    fontSize: 22, fontWeight: 700,
-                    color: '#FFFFFF',
-                    textShadow: '0 2px 8px rgba(0,0,0,0.35)',
-                    lineHeight: 1,
-                  }}>{letter}</span>
-                </motion.div>
-              );
-            })}
-          </div>
-          {/* Tagline */}
-          <div style={{
-            fontFamily: 'Caveat, cursive', fontSize: 18,
-            color: 'rgba(255,255,255,0.8)', marginTop: 4,
-            textShadow: '0 1px 4px rgba(0,0,0,0.2)',
-          }}>Stack · Sort · Vanish!</div>
-        </motion.div>
+        {/* ── Pixel-art cat-letter logo: each letter is a 5×7 grid of cats ── */}
+        {(() => {
+          // 5x7 bitmaps for each letter (row-major, 1=cat, 0=empty)
+          const BITMAPS: Record<string, number[]> = {
+            'C': [0,1,1,1,0, 1,0,0,0,1, 1,0,0,0,0, 1,0,0,0,0, 1,0,0,0,0, 1,0,0,0,1, 0,1,1,1,0],
+            'A': [0,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 1,1,1,1,1, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1],
+            'T': [1,1,1,1,1, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0, 0,0,1,0,0],
+            'S': [0,1,1,1,0, 1,0,0,0,1, 1,0,0,0,0, 0,1,1,1,0, 0,0,0,0,1, 1,0,0,0,1, 0,1,1,1,0],
+            'O': [0,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 1,0,0,0,1, 0,1,1,1,0],
+            'R': [1,1,1,1,0, 1,0,0,0,1, 1,0,0,0,1, 1,1,1,1,0, 1,0,1,0,0, 1,0,0,1,0, 1,0,0,0,1],
+          };
+          // Coat assigned per letter for color variety
+          const LETTER_COATS: Record<string, CoatId> = {
+            'C': 'ginger', 'A': 'calico', 'T': 'white',
+            'S': 'tabby', 'O': 'siamese', 'R': 'black',
+          };
+          const CELL = 13; // px per cell
+          const GAP = 1;   // px gap between cells
+          const LETTER_GAP = 6; // px between letters
+          const COLS = 5;
+          const ROWS = 7;
+
+          // Row 1: C A T, Row 2: S O R T
+          const row1 = ['C','A','T'];
+          const row2 = ['S','O','R','T'];
+
+          const renderLetter = (letter: string, globalDelay: number) => {
+            const bitmap = BITMAPS[letter];
+            const coat = LETTER_COATS[letter];
+            const letterW = COLS * (CELL + GAP) - GAP;
+            const letterH = ROWS * (CELL + GAP) - GAP;
+            return (
+              <div key={letter} style={{ position: 'relative', width: letterW, height: letterH, flexShrink: 0 }}>
+                {bitmap.map((on, idx) => {
+                  if (!on) return null;
+                  const col = idx % COLS;
+                  const row = Math.floor(idx / COLS);
+                  const delay = globalDelay + (col + row) * 0.04;
+                  return (
+                    <motion.div
+                      key={idx}
+                      animate={{ y: [0, -4, 0], scale: [1, 1.08, 1] }}
+                      transition={{ repeat: Infinity, duration: 1.8, delay, ease: 'easeInOut' }}
+                      style={{
+                        position: 'absolute',
+                        left: col * (CELL + GAP),
+                        top: row * (CELL + GAP),
+                        width: CELL, height: CELL,
+                      }}
+                    >
+                      <CatImg coat={coat} size={CELL} />
+                    </motion.div>
+                  );
+                })}
+              </div>
+            );
+          };
+
+          return (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ type: 'spring', stiffness: 140, damping: 14 }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 24 }}
+            >
+              {/* Row 1: C A T */}
+              <div style={{ display: 'flex', gap: LETTER_GAP }}>
+                {row1.map((l, i) => renderLetter(l, i * 0.2))}
+              </div>
+              {/* Row 2: S O R T */}
+              <div style={{ display: 'flex', gap: LETTER_GAP }}>
+                {row2.map((l, i) => renderLetter(l, 0.6 + i * 0.2))}
+              </div>
+              {/* Tagline */}
+              <div style={{
+                fontFamily: 'Caveat, cursive', fontSize: 17,
+                color: 'rgba(255,255,255,0.85)', marginTop: 2,
+                textShadow: '0 1px 4px rgba(0,0,0,0.25)',
+              }}>Stack · Sort · Vanish!</div>
+            </motion.div>
+          );
+        })()}
 
         {/* Level N play button — big, bottom of hero */}
         <motion.button
