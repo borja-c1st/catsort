@@ -529,7 +529,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 3, name: 'Spotted & Grey', world: 1, levelInWorld: 3, isBoss: false,
     description: 'Sort the spotted and grey cats into their beds',
-    goalCoats: ['calico', 'tabby'], mergeSizeK: 3,
+    goalCoats: ['calico', 'tabby'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 28 },
     starThresholds: { two: 0.3, three: 0.55 }, triggers: [],
     // Verified solvable in 4 moves (BFS confirmed):
@@ -552,7 +552,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 4, name: 'Spotted & Grey Again', world: 1, levelInWorld: 4, isBoss: false,
     description: 'Sort the spotted and grey cats — one at a time!',
-    goalCoats: ['calico', 'tabby'], mergeSizeK: 3,
+    goalCoats: ['calico', 'tabby'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 20 },
     starThresholds: { two: 0.4, three: 0.7 }, triggers: [],
     containers: [
@@ -568,7 +568,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 5, name: 'Moonlit Window', world: 1, levelInWorld: 5, isBoss: true,
     description: 'Clear two coats before dawn',
-    goalCoats: ['ginger', 'white'], mergeSizeK: 3,
+    goalCoats: ['ginger', 'white'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 30 },
     starThresholds: { two: 0.2, three: 0.45 },
     triggers: [{ event: 'onVanishComplete', condition: { vanishesCompleted: 2 }, action: { type: 'grantBudget', moves: 3 } }],
@@ -589,7 +589,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 6, name: 'Garden Fence', world: 2, levelInWorld: 1, isBoss: false,
     description: 'Shoo the black and tabby cats off the fence',
-    goalCoats: ['black', 'tabby'], mergeSizeK: 3,
+    goalCoats: ['black', 'tabby'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 26 },
     starThresholds: { two: 0.25, three: 0.5 }, triggers: [],
     containers: [
@@ -604,7 +604,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 7, name: 'Flower Bed Snooze', world: 2, levelInWorld: 2, isBoss: false,
     description: 'Wake the calico and siamese from the flower beds',
-    goalCoats: ['calico', 'siamese'], mergeSizeK: 3,
+    goalCoats: ['calico', 'siamese'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 28 },
     starThresholds: { two: 0.25, three: 0.5 }, triggers: [],
     containers: [
@@ -620,7 +620,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 8, name: 'Butterfly Chase', world: 2, levelInWorld: 3, isBoss: false,
     description: 'Catch the ginger and black cats before they escape',
-    goalCoats: ['ginger', 'black'], mergeSizeK: 3,
+    goalCoats: ['ginger', 'black'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 24 },
     starThresholds: { two: 0.2, three: 0.45 }, triggers: [],
     containers: [
@@ -636,7 +636,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 9, name: 'Frozen Fountain', world: 2, levelInWorld: 4, isBoss: false,
     description: 'Thaw the fountain and free the white and siamese cats',
-    goalCoats: ['white', 'siamese'], mergeSizeK: 3,
+    goalCoats: ['white', 'siamese'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 26 },
     starThresholds: { two: 0.2, three: 0.45 }, triggers: [],
     containers: [
@@ -652,7 +652,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 10, name: 'Garden Party Boss', world: 2, levelInWorld: 5, isBoss: true,
     description: 'Clear three coats from the garden party',
-    goalCoats: ['tabby', 'calico', 'ginger'], mergeSizeK: 3,
+    goalCoats: ['tabby', 'calico', 'ginger'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 34 },
     starThresholds: { two: 0.18, three: 0.4 },
     triggers: [{ event: 'onVanishComplete', condition: { vanishesCompleted: 3 }, action: { type: 'grantBudget', moves: 4 } }],
@@ -674,7 +674,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 11, name: 'Rooftop Shadows', world: 3, levelInWorld: 1, isBoss: false,
     description: 'Clear the shadows from the midnight rooftop',
-    goalCoats: ['black', 'siamese'], mergeSizeK: 3,
+    goalCoats: ['black', 'siamese'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 24 },
     starThresholds: { two: 0.2, three: 0.42 }, triggers: [],
     containers: [
@@ -690,7 +690,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 12, name: 'Chimney Perch', world: 3, levelInWorld: 2, isBoss: false,
     description: 'Sort the white cats to their locked tower',
-    goalCoats: ['white', 'ginger'], mergeSizeK: 3,
+    goalCoats: ['white', 'ginger'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 26 },
     starThresholds: { two: 0.2, three: 0.42 }, triggers: [],
     containers: [
@@ -706,7 +706,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 13, name: 'Neon Alley', world: 3, levelInWorld: 3, isBoss: false,
     description: 'Sort the alley cats before the rain comes',
-    goalCoats: ['calico', 'tabby'], mergeSizeK: 3,
+    goalCoats: ['calico', 'tabby'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 22 },
     starThresholds: { two: 0.18, three: 0.38 }, triggers: [],
     containers: [
@@ -723,7 +723,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 14, name: 'Water Tower', world: 3, levelInWorld: 4, isBoss: false,
     description: 'Three coats, six towers, one chance',
-    goalCoats: ['ginger', 'white', 'black'], mergeSizeK: 3,
+    goalCoats: ['ginger', 'white', 'black'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 28 },
     starThresholds: { two: 0.18, three: 0.38 }, triggers: [],
     containers: [
@@ -740,7 +740,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 15, name: 'Midnight Boss', world: 3, levelInWorld: 5, isBoss: true,
     description: 'The rooftop king demands order',
-    goalCoats: ['siamese', 'calico', 'tabby'], mergeSizeK: 3,
+    goalCoats: ['siamese', 'calico', 'tabby'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 32 },
     starThresholds: { two: 0.15, three: 0.35 },
     triggers: [{ event: 'onVanishComplete', condition: { vanishesCompleted: 3 }, action: { type: 'grantBudget', moves: 4 } }],
@@ -762,7 +762,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 16, name: 'Crystal Corridor', world: 4, levelInWorld: 1, isBoss: false,
     description: 'The palace cats are scattered through the corridors',
-    goalCoats: ['ginger', 'siamese', 'black'], mergeSizeK: 3,
+    goalCoats: ['ginger', 'siamese', 'black'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 26 },
     starThresholds: { two: 0.15, three: 0.32 }, triggers: [],
     containers: [
@@ -779,7 +779,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 17, name: 'Throne Room', world: 4, levelInWorld: 2, isBoss: false,
     description: 'Only the worthy cats may sit on the throne',
-    goalCoats: ['white', 'tabby', 'calico'], mergeSizeK: 3,
+    goalCoats: ['white', 'tabby', 'calico'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 28 },
     starThresholds: { two: 0.15, three: 0.32 }, triggers: [],
     containers: [
@@ -796,7 +796,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 18, name: 'Hall of Mirrors', world: 4, levelInWorld: 3, isBoss: false,
     description: 'Every cat must find its reflection',
-    goalCoats: ['ginger', 'white', 'black', 'tabby', 'calico', 'siamese'], mergeSizeK: 3,
+    goalCoats: ['ginger', 'white', 'black', 'tabby', 'calico', 'siamese'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 36 },
     starThresholds: { two: 0.12, three: 0.28 }, triggers: [],
     containers: [
@@ -813,7 +813,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 19, name: 'Dream Staircase', world: 4, levelInWorld: 4, isBoss: false,
     description: 'Ascend the dream staircase with four coats cleared',
-    goalCoats: ['ginger', 'black', 'calico', 'siamese'], mergeSizeK: 3,
+    goalCoats: ['ginger', 'black', 'calico', 'siamese'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 30 },
     starThresholds: { two: 0.12, three: 0.28 }, triggers: [],
     containers: [
@@ -830,7 +830,7 @@ export const LEVELS: LevelConfig[] = [
   {
     id: 20, name: 'The Dream Palace', world: 4, levelInWorld: 5, isBoss: true,
     description: 'The ultimate challenge — clear every coat from the palace',
-    goalCoats: ['ginger', 'white', 'black', 'tabby', 'calico', 'siamese'], mergeSizeK: 3,
+    goalCoats: ['ginger', 'white', 'black', 'tabby', 'calico', 'siamese'], mergeSizeK: 2,
     budget: { type: 'moves', maxMoves: 40 },
     starThresholds: { two: 0.1, three: 0.25 },
     triggers: [
